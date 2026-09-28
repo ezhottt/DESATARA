@@ -1,0 +1,6 @@
+<script setup>
+import { Head, useForm } from '@inertiajs/vue3'
+const props = defineProps({ email: String, token: String })
+const form = useForm({ email: props.email ?? '', token: props.token ?? '', password: '', password_confirmation: '' })
+</script>
+<template><Head title="Kata sandi baru" /><main class="min-h-screen bg-slate-50 flex items-center justify-center p-6"><form class="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200" @submit.prevent="form.post('/reset-password')"><p class="text-sm font-semibold text-blue-700">DESATARA</p><h1 class="mt-2 text-2xl font-semibold">Kata sandi baru</h1><input v-model="form.email" type="email" required class="mt-6 w-full rounded-lg border px-3 py-2"><input v-model="form.password" type="password" required autocomplete="new-password" class="mt-4 w-full rounded-lg border px-3 py-2" placeholder="Kata sandi baru"><input v-model="form.password_confirmation" type="password" required autocomplete="new-password" class="mt-4 w-full rounded-lg border px-3 py-2" placeholder="Konfirmasi kata sandi"><p v-if="form.errors.email || form.errors.password" class="mt-2 text-sm text-red-600">{{ form.errors.email || form.errors.password }}</p><button :disabled="form.processing" class="mt-6 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-white">Simpan kata sandi</button></form></main></template>

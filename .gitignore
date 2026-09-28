@@ -1,8 +1,11 @@
+[Reading 27 lines from start (total: 27 lines, 0 remaining)]
+
 *.log
 .DS_Store
 .env
 .env.backup
 .env.production
+.env.testing
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -25,3 +28,5 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+[executed on device: LAPTOP-G1501JAD (620c9139-06b6-4045-945e-2781a4bddfa9)]
