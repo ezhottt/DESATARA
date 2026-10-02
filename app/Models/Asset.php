@@ -25,4 +25,40 @@ class Asset extends Model
     {
         return $this->hasMany(AssetAcquisition::class);
     }
+
+    /** @return HasMany<AssetClassificationAssignment, $this> */
+    public function classificationAssignments(): HasMany
+    {
+        return $this->hasMany(AssetClassificationAssignment::class);
+    }
+
+    /** @return HasMany<AssetMutation, $this> */
+    public function mutations(): HasMany
+    {
+        return $this->hasMany(AssetMutation::class);
+    }
+
+    /** @return HasMany<AssetResponsibilityAssignment, $this> */
+    public function responsibilityAssignments(): HasMany
+    {
+        return $this->hasMany(AssetResponsibilityAssignment::class);
+    }
+
+    /** @return HasMany<AssetConditionEvent, $this> */
+    public function conditionEvents(): HasMany
+    {
+        return $this->hasMany(AssetConditionEvent::class);
+    }
+
+    /** @return HasMany<AssetLifecycleEvent, $this> */
+    public function lifecycleEvents(): HasMany
+    {
+        return $this->hasMany(AssetLifecycleEvent::class);
+    }
+
+    /** @return HasMany<AssetCorrection, $this> */
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(AssetCorrection::class);
+    }
 }
