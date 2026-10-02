@@ -2044,7 +2044,7 @@ inventory observation
 updateStatus($request->status)
 ```
 
-These patterns violate locked architecture.
+These patterns violate the controlled architecture baseline.
 
 ---
 
@@ -2170,9 +2170,9 @@ Production smoke verified
 
 ---
 
-# 86. DOCUMENTATION FREEZE
+# 86. DOCUMENTATION BASELINE
 
-With this document locked, the pre-implementation documentation baseline consists of:
+With this document under controlled baseline, the pre-implementation documentation baseline consists of:
 
 ```text
 Master Blueprint DESATARA v3.0
@@ -2217,9 +2217,9 @@ No additional architecture document is required before bootstrap unless a contra
 
 ---
 
-# 88. LOCKED ROADMAP INVARIANTS
+# 88. CONTROLLED ROADMAP INVARIANTS
 
-The following are locked:
+The following are baseline invariants and require explicit reviewed change:
 
 1. **Tenant boundary is implemented before asset-domain expansion.**
 2. **RBAC and regulatory authority remain separate.**
@@ -2246,4 +2246,4 @@ The project is authorized to proceed to:
 
 > **B00 — Repository & Runtime Foundation**
 
-without redesigning the locked architecture unless implementation reveals a documented contradiction, regulatory requirement, or verified technical blocker.
+without redesigning the controlled architecture baseline unless implementation reveals a documented contradiction, regulatory requirement, or verified technical blocker.
