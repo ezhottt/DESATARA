@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\GovernanceController;
 use App\Http\Controllers\TenantContextController;
 use App\Http\Controllers\TenantSwitchController;
 use Illuminate\Support\Facades\Route;
@@ -28,5 +29,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('tenant.context')->group(function () {
         Route::get('/tenant/context', TenantContextController::class)->name('tenant.context');
+        Route::get('/administration/rbac', [GovernanceController::class, 'rbac'])->middleware('permission:tenant.settings.update')->name('governance.rbac');
+        Route::get('/administration/authorities', [GovernanceController::class, 'authorities'])->middleware('permission:tenant.settings.update')->name('governance.authorities');
+        Route::get('/administration/regulations', [GovernanceController::class, 'regulations'])->middleware('permission:audit.view')->name('governance.regulations');
     });
 });

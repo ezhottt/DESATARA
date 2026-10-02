@@ -1,0 +1,4 @@
+<script setup>
+defineProps({ officials: Array })
+</script>
+<template><main class="mx-auto max-w-6xl p-6"><h1 class="text-2xl font-semibold">Officials & Regulatory Authority</h1><p class="mt-2 text-slate-600">Authority aktif ditentukan oleh assignment, scope, status, dan masa berlaku—bukan nama role.</p><div v-for="item in officials" :key="item.id" class="mt-4 rounded border p-4"><strong>{{ item.position_name }}</strong><div class="text-sm text-slate-600">{{ item.authority_code }} · {{ item.status }}</div></div><p v-if="!officials.length" class="mt-6 text-slate-500">Belum ada assignment authority.</p></main></template>
