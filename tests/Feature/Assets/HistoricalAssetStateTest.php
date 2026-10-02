@@ -20,6 +20,8 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\Unit;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -101,6 +103,14 @@ class HistoricalAssetStateTest extends TestCase
         $this->assertTrue($first->is($retry));
         $this->assertSame(2, AssetMutation::query()->where('asset_id', $asset->id)->count());
         $this->assertSame($destination->id, $asset->fresh()->current_location_id);
+
+        try {
+            $history->move($asset, $fixture['location']->id, $fixture['user']->id, now()->addMinutes(2), 1, 'relocation', null, 'move-stale');
+            $this->fail('Stale mutation was accepted.');
+        } catch (RuntimeException) {
+            $this->assertSame(2, AssetMutation::query()->where('asset_id', $asset->id)->count());
+            $this->assertSame($destination->id, $asset->fresh()->current_location_id);
+        }
 
         $otherTenant = Tenant::factory()->active()->create();
         $foreignLocation = AssetLocation::query()->create(['tenant_id' => $otherTenant->id, 'code' => 'L2', 'name' => 'Foreign', 'location_type' => 'room', 'status' => 'active']);
@@ -312,6 +322,30 @@ class HistoricalAssetStateTest extends TestCase
         $history->changeCondition($secondAsset, 'damaged', $fixture['user']->id, now(), 1, 'inspection', null, 'shared-key');
     }
 
+    public function test_actor_without_active_tenant_membership_cannot_write_history(): void
+    {
+        $fixture = $this->fixture();
+        $asset = $this->asset($fixture);
+        $outsider = User::factory()->create();
+
+        try {
+            app(ManageHistoricalAssetState::class)->changeCondition($asset, 'damaged', $outsider->id, now(), 1, 'inspection');
+            $this->fail('Actor outside the tenant was accepted.');
+        } catch (AuthorizationException) {
+            $this->assertSame('good', $asset->fresh()->condition);
+            $this->assertSame(1, AssetConditionEvent::query()->where('asset_id', $asset->id)->count());
+        }
+    }
+
+    public function test_controlled_correction_requires_a_reason(): void
+    {
+        $fixture = $this->fixture();
+        $asset = $this->asset($fixture);
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(ManageHistoricalAssetState::class)->correct($asset, ['name' => 'Corrected'], '', $fixture['user']->id, now(), 1);
+    }
+
     public function test_database_rejects_duplicate_open_and_cross_tenant_assignments(): void
     {
         $fixture = $this->fixture();
@@ -325,6 +359,45 @@ class HistoricalAssetStateTest extends TestCase
             'valid_from' => now(),
             'assignment_type' => 'invalid_duplicate',
             'assigned_by' => $fixture['user']->id,
+        ]);
+    }
+
+    public function test_history_action_rejects_actor_without_active_tenant_membership(): void
+    {
+        $fixture = $this->fixture();
+        $asset = $this->asset($fixture);
+        $outsider = User::factory()->create();
+
+        $this->expectException(AuthorizationException::class);
+        app(ManageHistoricalAssetState::class)->changeCondition($asset, 'damaged', $outsider->id, now(), 1, 'inspection');
+    }
+
+    public function test_history_action_rejects_write_for_suspended_tenant(): void
+    {
+        $fixture = $this->fixture();
+        $asset = $this->asset($fixture);
+        $fixture['tenant']->update(['status' => 'suspended', 'suspended_at' => now()]);
+
+        $this->expectException(AuthorizationException::class);
+        app(ManageHistoricalAssetState::class)->changeCondition($asset, 'damaged', $fixture['user']->id, now(), 1, 'inspection');
+    }
+
+    public function test_workflow_reference_cannot_be_populated_before_b12(): void
+    {
+        $fixture = $this->fixture();
+        $asset = $this->asset($fixture);
+
+        $this->expectException(QueryException::class);
+        DB::table('asset_condition_events')->insert([
+            'uuid' => fake()->uuid(),
+            'tenant_id' => $fixture['tenant']->id,
+            'asset_id' => $asset->id,
+            'new_condition' => 'good',
+            'effective_at' => now(),
+            'source_type' => 'invalid',
+            'actor_id' => $fixture['user']->id,
+            'workflow_instance_id' => 1,
+            'created_at' => now(),
         ]);
     }
 
