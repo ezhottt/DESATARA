@@ -7,6 +7,7 @@ use Database\Factories\TenantMembershipFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @property CarbonImmutable|null $joined_at
@@ -35,6 +36,13 @@ class TenantMembership extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** @return BelongsToMany<Role, $this> */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'membership_roles', 'membership_id', 'role_id')
+            ->withPivot(['assigned_by', 'assigned_at']);
     }
 
     public function isCurrentlyActive(): bool
