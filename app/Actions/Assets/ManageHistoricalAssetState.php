@@ -117,6 +117,9 @@ class ManageHistoricalAssetState
     public function correct(Asset $asset, array $changes, string $reason, int $actorId, DateTimeInterface $appliedAt, int $lockVersion, ?string $reference = null, ?string $idempotencyKey = null): AssetCorrection
     {
         return DB::transaction(function () use ($asset, $changes, $reason, $actorId, $appliedAt, $lockVersion, $reference, $idempotencyKey) {
+            if (trim($reason) === '') {
+                throw new InvalidArgumentException('A correction reason is required.');
+            }
             $this->assertActor($asset, $actorId);
             $allowed = ['name', 'description', 'classification_id', 'current_location_id', 'current_responsible_party_id', 'condition', 'lifecycle_status'];
             if ($changes === [] || array_diff(array_keys($changes), $allowed)) {

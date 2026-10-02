@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Asset extends Model
@@ -24,6 +25,18 @@ class Asset extends Model
     public function acquisitions(): HasMany
     {
         return $this->hasMany(AssetAcquisition::class);
+    }
+
+    /** @return BelongsTo<AssetClassification, $this> */
+    public function classification(): BelongsTo
+    {
+        return $this->belongsTo(AssetClassification::class, 'classification_id');
+    }
+
+    /** @return HasMany<AssetPhoto, $this> */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(AssetPhoto::class);
     }
 
     /** @return HasMany<AssetClassificationAssignment, $this> */

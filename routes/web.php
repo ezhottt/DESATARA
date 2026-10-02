@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\EvidenceController;
 use App\Http\Controllers\GovernanceController;
 use App\Http\Controllers\TenantContextController;
 use App\Http\Controllers\TenantSwitchController;
@@ -24,11 +25,14 @@ Route::get('/', fn () => Inertia::render('Foundation', ['product' => 'DESATARA']
     ->middleware('auth')
     ->name('home');
 
+Route::get('/qr/{token}', [EvidenceController::class, 'publicQr'])->middleware('throttle:60,1')->name('qr.public');
+
 Route::middleware('auth')->group(function () {
     Route::post('/tenant/switch/{tenant:uuid}', TenantSwitchController::class)->name('tenant.switch');
 
     Route::middleware('tenant.context')->group(function () {
         Route::get('/tenant/context', TenantContextController::class)->name('tenant.context');
+        Route::get('/documents/{uuid}/download', [EvidenceController::class, 'download'])->middleware('permission:documents.view')->name('documents.download');
         Route::get('/administration/rbac', [GovernanceController::class, 'rbac'])->middleware('permission:tenant.settings.update')->name('governance.rbac');
         Route::get('/administration/authorities', [GovernanceController::class, 'authorities'])->middleware('permission:tenant.settings.update')->name('governance.authorities');
         Route::get('/administration/regulations', [GovernanceController::class, 'regulations'])->middleware('permission:audit.view')->name('governance.regulations');
