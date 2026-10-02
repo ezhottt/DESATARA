@@ -28,8 +28,5 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('tenant.context')->group(function () {
         Route::get('/tenant/context', TenantContextController::class)->name('tenant.context');
-        Route::post('/tenant/mutation-probe', fn () => response()->noContent())
-            ->middleware('tenant.operational')
-            ->name('tenant.mutation-probe');
     });
 });

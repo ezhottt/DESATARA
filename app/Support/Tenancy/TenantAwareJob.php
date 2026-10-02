@@ -12,6 +12,10 @@ abstract class TenantAwareJob
     final public function handle(TenantContext $context): void
     {
         $tenant = Tenant::query()->find($this->tenantId) ?? throw new RuntimeException('Tenant no longer exists.');
+        if (! $tenant->isOperational()) {
+            throw new RuntimeException('Tenant is not operational.');
+        }
+
         try {
             $context->set($tenant);
             $this->handleForTenant($tenant, $context);
