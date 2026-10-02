@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AssetSearchController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvidenceController;
 use App\Http\Controllers\GovernanceController;
 use App\Http\Controllers\TenantContextController;
@@ -31,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/tenant/switch/{tenant:uuid}', TenantSwitchController::class)->name('tenant.switch');
 
     Route::middleware('tenant.context')->group(function () {
+        Route::get('/dashboard', DashboardController::class)->middleware('permission:assets.view')->name('dashboard');
+        Route::get('/search', AssetSearchController::class)->middleware('permission:assets.view')->name('search');
         Route::get('/tenant/context', TenantContextController::class)->name('tenant.context');
         Route::get('/documents/{uuid}/download', [EvidenceController::class, 'download'])->middleware('permission:documents.view')->name('documents.download');
         Route::get('/administration/rbac', [GovernanceController::class, 'rbac'])->middleware('permission:tenant.settings.update')->name('governance.rbac');
