@@ -1,7 +1,7 @@
 # API ARCHITECTURE & CONTRACT BASELINE — DESATARA
 
 **Document Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Boundary:** Integration / external / future mobile / M2M
 

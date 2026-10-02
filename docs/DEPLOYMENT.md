@@ -1,7 +1,7 @@
 # RUNTIME & DEPLOYMENT ARCHITECTURE — DESATARA
 
 **Document Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Target:** Linux VPS / Cloud
 

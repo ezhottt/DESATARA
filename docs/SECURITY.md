@@ -2,7 +2,7 @@
 
 **Document:** `docs/SECURITY.md`  
 **Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Parent:** Master Blueprint DESATARA v3.0  
 **Upstream Contracts:** RTM v1.0 · PRD v1.0 · Workflow v1.0 · RBAC & Regulatory Authority Matrix v1.0 · ERD v1.0 · Data Dictionary v1.0 · UI/UX Specification v1.0  

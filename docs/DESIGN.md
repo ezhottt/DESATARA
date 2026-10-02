@@ -1,7 +1,7 @@
 # DESIGN SYSTEM & VISUAL LANGUAGE — DESATARA
 
 **Document Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Parent:** UI/UX Specification v1.0  
 **Scope:** Visual system, tokens, component appearance, responsive visual consistency

@@ -2,7 +2,7 @@
 
 **Document:** `docs/DATA-DICTIONARY.md`  
 **Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Parent:** ERD DESATARA v1.0  
 **Database:** PostgreSQL  
 **Application:** Laravel + Inertia.js + Vue 3  

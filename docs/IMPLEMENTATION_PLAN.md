@@ -2,7 +2,7 @@
 
 **Document:** `docs/IMPLEMENTATION_PLAN.md`  
 **Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Parent:** Master Blueprint DESATARA v3.0  
 **Upstream Contracts:** RTM v1.0 · PRD v1.0 · Workflow Specification v1.0 · RBAC & Regulatory Authority Matrix v1.0 · ERD v1.0 · Data Dictionary v1.0 · UI/UX Specification v1.0 · Security Specification v1.0 · Testing & Acceptance Criteria v1.0  
@@ -720,6 +720,16 @@ Asset-level acquisition values are projection/summary only where retained.
 ## Exit Gate
 
 Asset can be safely registered with valid provenance.
+
+## Public Alpha Milestone
+
+After B07 passes its own gates, the project may publish `v0.1.0-alpha` as a demo/developer preview. The minimum vertical slice is:
+
+```text
+Authentication -> Tenant Context -> RBAC/Authority Foundation -> Master Data -> Asset Registration -> Asset List/Detail
+```
+
+This alpha is explicitly **not production-ready** and does not waive B08-B17 requirements. It exists to make implementation progress testable by contributors before v1.0.0.
 
 ---
 
@@ -2083,7 +2093,15 @@ Audit is evidence-driven and read-only first.
 
 Document versions are independent from application versions.
 
-Initial production application release:
+Pre-production public milestone after B07:
+
+```text
+DESATARA v0.1.0-alpha
+```
+
+This is a demo/developer preview, not a production-readiness claim.
+
+Initial production application release remains:
 
 ```text
 DESATARA v1.0.0
@@ -2121,6 +2139,10 @@ PATCH → backward-compatible fix
 ```
 
 Exact release policy may be refined after first production release.
+
+## Demo / Onboarding Data Strategy
+
+Demo seed data must be synthetic and must not contain real village credentials, personal data, or private evidence. A complete onboarding dataset is introduced only after B02 Tenant Boundary and B03 RBAC are implemented, so tenant, membership, and role relationships are represented through the real security model rather than temporary shortcuts.
 
 ---
 

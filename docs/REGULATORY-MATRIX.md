@@ -1,7 +1,7 @@
 # DESATARA — REGULATORY TRACEABILITY MATRIX v1.0
 
 **Parent Document:** Master Blueprint DESATARA v3.0
-**Status:** LOCKED
+**Status:** CONTROLLED BASELINE
 **Scope:** Regulasi nasional inti pengelolaan aset desa
 **Primary References:** Permendagri 1/2016 jo. Permendagri 3/2024
 

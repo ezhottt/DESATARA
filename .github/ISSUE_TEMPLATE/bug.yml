@@ -1,0 +1,21 @@
+﻿name: Bug report
+description: Laporkan defect yang dapat direproduksi
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Ringkasan
+      description: Apa yang terjadi dan apa yang seharusnya terjadi?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Langkah reproduksi
+      description: Sertakan langkah minimal dan environment tanpa secret/data pribadi.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Evidence
+      description: Log/screenshot yang sudah disanitasi dan test regression bila tersedia.

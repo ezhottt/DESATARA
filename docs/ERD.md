@@ -2,7 +2,7 @@
 
 **Document:** `docs/ERD.md`
 **Version:** 1.0
-**Status:** LOCKED
+**Status:** CONTROLLED BASELINE
 **Parent Documents:** Master Blueprint DESATARA v3.0, Regulatory Traceability Matrix v1.0, PRD DESATARA v1.0, Business Process & Workflow Specification v1.0, RBAC & Regulatory Authority Matrix v1.0
 **Database:** PostgreSQL
 **Tenancy Model:** Shared Database / Shared Schema / `tenant_id`

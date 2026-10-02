@@ -1,7 +1,7 @@
 # DOCUMENT CONTROL & CONTRACT INDEX — DESATARA
 
 **Document Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Purpose:** Canonical documentation governance and contract precedence
 
@@ -19,20 +19,20 @@ Dokumen yang lebih hilir tidak boleh melemahkan invariant yang ditetapkan dokume
 
 | Contract | Version | Status | Authoritative scope |
 |---|---:|---|---|
-| `REGULATORY-MATRIX.md` | 1.0 | LOCKED | regulatory traceability, provision-to-rule mapping |
-| `ARCHITECTURE.md` | 3.0 | LOCKED | system architecture, tenancy, domain boundaries, architectural invariants |
-| `PRD.md` | 1.0 | LOCKED | product functional/non-functional requirements and scope |
-| `WORKFLOWS.md` | 1.0 | LOCKED | state transitions, workflow behavior, historical transition rules |
-| `RBAC.md` | 1.0 | LOCKED | role, permission, official position, authority, SoD/access contract |
-| `ERD.md` | 1.0 | LOCKED | logical data model and relationships |
-| `DATA-DICTIONARY.md` | 1.0 | LOCKED | physical data contract, field/type/constraint semantics |
-| `UI-UX.md` | 1.0 | LOCKED | information architecture, interaction and accessibility contract |
-| `DESIGN.md` | 1.0 | LOCKED | visual language, semantic design tokens and component appearance |
-| `SECURITY.md` | 1.0 | LOCKED | security controls, threat boundaries and production security gates |
-| `TESTING.md` | 1.0 | LOCKED | verification, acceptance and release evidence |
-| `IMPLEMENTATION_PLAN.md` | 1.0 | LOCKED | dependency-ordered delivery batches and implementation gates |
-| `API.md` | 1.0 | LOCKED | API boundary, versioning and protocol-level contract |
-| `DEPLOYMENT.md` | 1.0 | LOCKED | runtime topology and deployment contract |
+| `REGULATORY-MATRIX.md` | 1.0 | CONTROLLED BASELINE | regulatory traceability, provision-to-rule mapping |
+| `ARCHITECTURE.md` | 3.0 | CONTROLLED BASELINE | system architecture, tenancy, domain boundaries, architectural invariants |
+| `PRD.md` | 1.0 | CONTROLLED BASELINE | product functional/non-functional requirements and scope |
+| `WORKFLOWS.md` | 1.0 | CONTROLLED BASELINE | state transitions, workflow behavior, historical transition rules |
+| `RBAC.md` | 1.0 | CONTROLLED BASELINE | role, permission, official position, authority, SoD/access contract |
+| `ERD.md` | 1.0 | CONTROLLED BASELINE | logical data model and relationships |
+| `DATA-DICTIONARY.md` | 1.0 | CONTROLLED BASELINE | physical data contract, field/type/constraint semantics |
+| `UI-UX.md` | 1.0 | CONTROLLED BASELINE | information architecture, interaction and accessibility contract |
+| `DESIGN.md` | 1.0 | CONTROLLED BASELINE | visual language, semantic design tokens and component appearance |
+| `SECURITY.md` | 1.0 | CONTROLLED BASELINE | security controls, threat boundaries and production security gates |
+| `TESTING.md` | 1.0 | CONTROLLED BASELINE | verification, acceptance and release evidence |
+| `IMPLEMENTATION_PLAN.md` | 1.0 | CONTROLLED BASELINE | dependency-ordered delivery batches and implementation gates |
+| `API.md` | 1.0 | CONTROLLED BASELINE | API boundary, versioning and protocol-level contract |
+| `DEPLOYMENT.md` | 1.0 | CONTROLLED BASELINE | runtime topology and deployment contract |
 
 ## 4. Conflict resolution
 
@@ -49,7 +49,7 @@ Dokumen yang lebih hilir tidak boleh melemahkan invariant yang ditetapkan dokume
 
 Perubahan branding/non-substantive tidak memerlukan version bump bila semantic contract tidak berubah. Perubahan substantif terhadap requirement, invariant, authority, workflow, data contract, security boundary, atau acceptance gate harus melalui review dokumen authoritative dan sinkronisasi downstream sebelum implementasi.
 
-Status `LOCKED` berarti baseline implementasi telah disepakati; bukan berarti dokumen kebal terhadap perubahan regulasi atau verified contradiction.
+Status `CONTROLLED BASELINE` berarti kontrak telah disepakati sebagai baseline implementasi, tetapi dapat berubah melalui reviewed PR ketika didukung perubahan regulasi, verified contradiction, security finding, atau implementation evidence. Perubahan wajib memperbarui kontrak authoritative dan downstream impact secara eksplisit; baseline tidak boleh dilemahkan diam-diam.
 
 ## 6. Implementation contract
 
@@ -59,4 +59,4 @@ Kode, migration, policy, service, UI, API, job, report, import/export, test, dan
 
 Artifact berikut dibuat ketika lifecycle membutuhkannya: `BACKUP-RESTORE.md`, `CHANGELOG.md`, OpenAPI machine-readable contract, runbook operasi, dan release evidence. Ketiadaannya sebelum fase yang ditentukan tidak boleh ditafsirkan sebagai izin mengabaikan requirement upstream.
 
-**DOCUMENT CONTROL & CONTRACT INDEX DESATARA v1.0 — LOCKED**
+**DOCUMENT CONTROL & CONTRACT INDEX DESATARA v1.0 — CONTROLLED BASELINE**
