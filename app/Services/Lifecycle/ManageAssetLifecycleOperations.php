@@ -3,6 +3,7 @@
 namespace App\Services\Lifecycle;
 
 use App\Actions\Assets\ManageHistoricalAssetState;
+use App\Models\ApprovalRequest;
 use App\Models\Asset;
 use App\Models\AssetDisposal;
 use App\Models\AssetDisposalItem;
@@ -110,6 +111,7 @@ class ManageAssetLifecycleOperations
 
         return DB::transaction(function () use ($tenant, $actorId, $transfer, $data) {
             $transfer = AssetTransfer::query()->whereKey($transfer->id)->where('tenant_id', $tenant->id)->lockForUpdate()->firstOrFail();
+            $this->assertWorkflowApproved($tenant, $transfer->getAttribute('workflow_instance_id'));
             if ($transfer->getAttribute('status') === 'executed') {
                 return $transfer;
             }
@@ -178,6 +180,7 @@ class ManageAssetLifecycleOperations
 
         return DB::transaction(function () use ($tenant, $actorId, $disposal, $data) {
             $disposal = AssetDisposal::query()->whereKey($disposal->id)->where('tenant_id', $tenant->id)->lockForUpdate()->firstOrFail();
+            $this->assertWorkflowApproved($tenant, $disposal->getAttribute('workflow_instance_id'));
             if ($disposal->getAttribute('status') === 'executed') {
                 return $disposal;
             }
@@ -266,6 +269,13 @@ class ManageAssetLifecycleOperations
     {
         if ((int) $record->getAttribute('tenant_id') !== (int) $tenant->id) {
             throw new AuthorizationException('Resource is outside the active tenant.');
+        }
+    }
+
+    private function assertWorkflowApproved(Tenant $tenant, mixed $workflowId): void
+    {
+        if ($workflowId !== null && ! ApprovalRequest::query()->where('tenant_id', $tenant->id)->where('workflow_instance_id', $workflowId)->whereIn('status', ['approved', 'finalized'])->exists()) {
+            throw new \RuntimeException('Approved workflow is required before execution.');
         }
     }
 }
