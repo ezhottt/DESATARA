@@ -24,13 +24,13 @@ Dokumen yang lebih hilir tidak boleh melemahkan invariant yang ditetapkan dokume
 | `PRD.md` | 1.0 | CONTROLLED BASELINE | product functional/non-functional requirements and scope |
 | `WORKFLOWS.md` | 1.0 | CONTROLLED BASELINE | state transitions, workflow behavior, historical transition rules |
 | `RBAC.md` | 1.0 | CONTROLLED BASELINE | role, permission, official position, authority, SoD/access contract |
-| `ERD.md` | 1.0 | CONTROLLED BASELINE | logical data model and relationships |
-| `DATA-DICTIONARY.md` | 1.0 | CONTROLLED BASELINE | physical data contract, field/type/constraint semantics |
+| `ERD.md` | 1.1 | CONTROLLED BASELINE | logical data model and relationships |
+| `DATA-DICTIONARY.md` | 1.1 | CONTROLLED BASELINE | physical data contract, field/type/constraint semantics |
 | `UI-UX.md` | 1.0 | CONTROLLED BASELINE | information architecture, interaction and accessibility contract |
 | `DESIGN.md` | 1.0 | CONTROLLED BASELINE | visual language, semantic design tokens and component appearance |
 | `SECURITY.md` | 1.0 | CONTROLLED BASELINE | security controls, threat boundaries and production security gates |
 | `TESTING.md` | 1.0 | CONTROLLED BASELINE | verification, acceptance and release evidence |
-| `IMPLEMENTATION_PLAN.md` | 1.0 | CONTROLLED BASELINE | dependency-ordered delivery batches and implementation gates |
+| `IMPLEMENTATION_PLAN.md` | 1.1 | CONTROLLED BASELINE | dependency-ordered delivery batches and implementation gates |
 | `API.md` | 1.0 | CONTROLLED BASELINE | API boundary, versioning and protocol-level contract |
 | `DEPLOYMENT.md` | 1.0 | CONTROLLED BASELINE | runtime topology and deployment contract |
 

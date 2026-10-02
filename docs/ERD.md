@@ -1,7 +1,7 @@
 # ENTITY RELATIONSHIP DESIGN — DESATARA
 
 **Document:** `docs/ERD.md`
-**Version:** 1.0
+**Version:** 1.1
 **Status:** CONTROLLED BASELINE
 **Parent Documents:** Master Blueprint DESATARA v3.0, Regulatory Traceability Matrix v1.0, PRD DESATARA v1.0, Business Process & Workflow Specification v1.0, RBAC & Regulatory Authority Matrix v1.0
 **Database:** PostgreSQL
@@ -729,6 +729,112 @@ Possible hierarchy:
 **Desa → Kompleks → Gedung → Ruangan → Area**
 
 Parent dan child wajib berada dalam tenant yang sama.
+
+---
+
+# 36A. ASSET CLASSIFICATION ASSIGNMENTS
+
+## `asset_classification_assignments`
+
+Authoritative classification history for an asset. `assets.classification_id` is only the current projection.
+
+Attributes:
+
+- id
+- tenant_id
+- asset_id
+- classification_id
+- valid_from
+- valid_until nullable
+- assignment_type
+- reason nullable
+- assigned_by
+- workflow_instance_id nullable
+- created_at
+
+The asset reference is tenant-aware. Classification references the versioned canonical `asset_classifications` row. A tenant/asset may have only one open assignment (`valid_until IS NULL`) at a time. Initial registration creates the first assignment; reclassification closes the previous interval and appends a new assignment in the same transaction as the current projection update.
+
+Historical assignments are not rewritten when classification masters or the current projection change.
+
+---
+
+# 36B. ASSET CONDITION EVENTS
+
+## `asset_condition_events`
+
+Append-oriented authoritative history for condition changes.
+
+Attributes:
+
+- id
+- uuid
+- tenant_id
+- asset_id
+- previous_condition nullable for initial event
+- new_condition
+- effective_at
+- reason nullable
+- source_type
+- actor_id
+- workflow_instance_id nullable
+- idempotency_key nullable
+- created_at
+
+`assets.condition` is the current projection. Event insertion and projection update are atomic. Canonical condition validation follows the applicable regulatory/reference rule; the history table does not create a tenant-defined condition taxonomy.
+
+---
+
+# 36C. ASSET LIFECYCLE EVENTS
+
+## `asset_lifecycle_events`
+
+Durable history of lifecycle state transitions.
+
+Attributes:
+
+- id
+- uuid
+- tenant_id
+- asset_id
+- from_status nullable for initial event
+- to_status
+- transition_type
+- effective_at
+- reason nullable
+- actor_id
+- workflow_instance_id nullable
+- idempotency_key nullable
+- created_at
+
+`assets.lifecycle_status` is the current projection. Lifecycle events do not authorize a transition by themselves: permission, authority, prerequisite, evidence, approval, and workflow guards remain governed by RBAC/Workflow contracts. Direct arbitrary edits of `assets.lifecycle_status` are prohibited.
+
+---
+
+# 36D. CONTROLLED ASSET CORRECTIONS
+
+## `asset_corrections`
+
+Append-only evidence of an applied administrative correction. It is not a generic patch mechanism.
+
+Attributes:
+
+- id
+- uuid
+- tenant_id
+- asset_id
+- correction_type
+- corrected_fields
+- before_values
+- after_values
+- reason
+- reference nullable
+- applied_by
+- applied_at
+- workflow_instance_id nullable
+- idempotency_key nullable
+- created_at
+
+`corrected_fields`, `before_values`, and `after_values` are structured JSON objects limited by server-side domain allowlists. A material correction follows WF-AST-003 and records before/after. If the corrected fact is itself historical (classification, location, responsible party, condition, lifecycle), correction must append the corresponding domain history/event and update its current projection atomically; it must never rewrite the old historical row.
 
 ---
 
@@ -1897,8 +2003,12 @@ tenants
   |      +--- asset_equipment_details
   |      +--- asset_qr_tokens
   |      +--- asset_photos
+  |      +--- asset_classification_assignments
   |      +--- asset_mutations
   |      +--- asset_responsibility_assignments
+  |      +--- asset_condition_events
+  |      +--- asset_lifecycle_events
+  |      +--- asset_corrections
   |      +--- asset_maintenances
   |      +--- asset_valuations
   |
@@ -2089,7 +2199,7 @@ Migration Laravel/PostgreSQL hanya dibuat setelah:
 12. concurrency/idempotency implementation dikunci;
 13. index/constraint baseline dikunci.
 
-Detail tersebut menjadi tugas **Data Dictionary v1.0**.
+Detail tersebut menjadi tugas **Data Dictionary v1.1**.
 
 ---
 
@@ -2121,7 +2231,7 @@ Semua dikunci pada Data Dictionary.
 
 # 102. ERD ACCEPTANCE GATE
 
-ERD v1.0 dinyatakan memenuhi baseline karena logical architecture telah menetapkan:
+ERD v1.1 dinyatakan memenuhi baseline karena logical architecture telah menetapkan:
 
 - tenant ownership;
 - tenant-aware relationship policy;

@@ -1,9 +1,9 @@
 # DATA DICTIONARY — DESATARA
 
 **Document:** `docs/DATA-DICTIONARY.md`  
-**Version:** 1.0  
+**Version:** 1.1
 **Status:** CONTROLLED BASELINE
-**Parent:** ERD DESATARA v1.0  
+**Parent:** ERD DESATARA v1.1
 **Database:** PostgreSQL  
 **Application:** Laravel + Inertia.js + Vue 3  
 **Tenancy:** Shared Database / Shared Schema / Tenant Isolation by `tenant_id`
@@ -874,6 +874,156 @@ Historical acquisition record is append-oriented.
 
 ---
 
+# 33A. ASSET CLASSIFICATION ASSIGNMENTS
+
+## `asset_classification_assignments`
+
+```text
+id bigint identity
+tenant_id bigint
+asset_id bigint
+classification_id bigint
+valid_from timestamptz
+valid_until timestamptz NULL
+assignment_type varchar(50)
+reason text NULL
+assigned_by bigint
+workflow_instance_id bigint NULL
+created_at timestamptz
+```
+
+Constraints:
+
+```text
+(tenant_id, asset_id) -> assets(tenant_id, id)
+classification_id -> asset_classifications.id
+assigned_by -> users.id
+valid_until IS NULL OR valid_until >= valid_from
+```
+
+Partial unique index:
+
+```text
+UNIQUE (tenant_id, asset_id) WHERE valid_until IS NULL
+```
+
+The open row is the authoritative current assignment; `assets.classification_id` is its projection. Reclassification closes the open interval and appends the replacement in one transaction. Historical rows are not updated except for closing the previously open interval as part of that transition.
+
+---
+
+# 33B. ASSET CONDITION EVENTS
+
+## `asset_condition_events`
+
+```text
+id bigint identity
+uuid uuid
+tenant_id bigint
+asset_id bigint
+previous_condition varchar(50) NULL
+new_condition varchar(50)
+effective_at timestamptz
+reason text NULL
+source_type varchar(50)
+actor_id bigint
+workflow_instance_id bigint NULL
+idempotency_key varchar(150) NULL
+created_at timestamptz
+```
+
+Constraints/indexes:
+
+```text
+UNIQUE uuid
+(tenant_id, asset_id) -> assets(tenant_id, id)
+actor_id -> users.id
+UNIQUE (tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL
+INDEX (tenant_id, asset_id, effective_at)
+```
+
+Rows are append-oriented. `assets.condition` is updated in the same transaction as event insertion. Initial registration may use `previous_condition = NULL`.
+
+---
+
+# 33C. ASSET LIFECYCLE EVENTS
+
+## `asset_lifecycle_events`
+
+```text
+id bigint identity
+uuid uuid
+tenant_id bigint
+asset_id bigint
+from_status varchar(50) NULL
+to_status varchar(50)
+transition_type varchar(100)
+effective_at timestamptz
+reason text NULL
+actor_id bigint
+workflow_instance_id bigint NULL
+idempotency_key varchar(150) NULL
+created_at timestamptz
+```
+
+Constraints/indexes:
+
+```text
+UNIQUE uuid
+(tenant_id, asset_id) -> assets(tenant_id, id)
+actor_id -> users.id
+UNIQUE (tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL
+INDEX (tenant_id, asset_id, effective_at)
+```
+
+Rows are append-oriented. `assets.lifecycle_status` is updated atomically with the event. Initial registration may use `from_status = NULL`. Allowed transitions are application/workflow rules, not arbitrary client values.
+
+---
+
+# 33D. ASSET CORRECTIONS
+
+## `asset_corrections`
+
+```text
+id bigint identity
+uuid uuid
+tenant_id bigint
+asset_id bigint
+correction_type varchar(100)
+corrected_fields jsonb
+before_values jsonb
+after_values jsonb
+reason text
+reference varchar(255) NULL
+applied_by bigint
+applied_at timestamptz
+workflow_instance_id bigint NULL
+idempotency_key varchar(150) NULL
+created_at timestamptz
+```
+
+Constraints/indexes:
+
+```text
+UNIQUE uuid
+(tenant_id, asset_id) -> assets(tenant_id, id)
+applied_by -> users.id
+jsonb_typeof(corrected_fields) = 'object'
+jsonb_typeof(before_values) = 'object'
+jsonb_typeof(after_values) = 'object'
+UNIQUE (tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL
+INDEX (tenant_id, asset_id, applied_at)
+```
+
+This table records an applied controlled correction; it is not a generic arbitrary master-update endpoint. Server-side domain rules define correctable fields. Material correction records before/after and follows WF-AST-003. A correction to classification, location, responsible party, condition, or lifecycle also appends the corresponding authoritative history and updates the current projection in the same transaction. Existing historical rows are never rewritten to make a correction appear retroactive.
+
+---
+
+## Deferred Workflow Link Rule
+
+B08 historical tables may contain nullable `workflow_instance_id` columns before the workflow engine exists. B08 must not populate those columns and must not invent a workflow substitute. The FK to `workflow_instances(id)` is added by B12 after the workflow table exists; from that point, non-null workflow references must satisfy the FK. This preserves the B08 -> B12 dependency without implementing approval governance early.
+
+---
+
 # 34. ASSET LOCATIONS
 
 ## `asset_locations`
@@ -931,13 +1081,20 @@ created_at
 updated_at
 ```
 
-Unique idempotency when present:
+Constraints/indexes:
 
 ```text
-(tenant_id, idempotency_key)
+UNIQUE uuid
+(tenant_id, asset_id) -> assets(tenant_id, id)
+(tenant_id, origin_location_id) -> asset_locations(tenant_id, id) when present
+(tenant_id, destination_location_id) -> asset_locations(tenant_id, id)
+requested_by -> users.id
+executed_by -> users.id when present
+UNIQUE (tenant_id, idempotency_key) WHERE idempotency_key IS NOT NULL
+INDEX (tenant_id, asset_id, effective_at)
 ```
 
-Current location update and mutation execution must share one transaction.
+Current location update and authoritative mutation execution must share one transaction. Initial placement uses `origin_location_id = NULL` and the destination as the first historical location.
 
 ---
 
@@ -958,9 +1115,18 @@ workflow_instance_id NULL
 created_at
 ```
 
-Check date interval.
+Constraints/indexes:
 
-Historical assignment not overwritten.
+```text
+(tenant_id, asset_id) -> assets(tenant_id, id)
+(tenant_id, responsible_party_id) -> responsible_parties(tenant_id, id)
+assigned_by -> users.id
+valid_until IS NULL OR valid_until >= valid_from
+UNIQUE (tenant_id, asset_id) WHERE valid_until IS NULL
+INDEX (tenant_id, asset_id, valid_from)
+```
+
+Changing responsibility closes the previous open interval and appends a new assignment in the same transaction as `assets.current_responsible_party_id`. Historical assignments are not otherwise overwritten.
 
 ---
 
@@ -2375,6 +2541,11 @@ Mandatory targets:
 - document/subject;
 - photo/asset;
 - mutation/asset;
+- classification-assignment/asset;
+- responsibility-assignment/asset;
+- condition-event/asset;
+- lifecycle-event/asset;
+- correction/asset;
 - inventory/asset;
 - workflow/subject;
 - approval/workflow;
@@ -2424,15 +2595,16 @@ Recommended dependency order:
 10. locations
 11. assets
 12. subtype/acquisition
-13. documents/evidence/photos/QR
-14. workflow engine
-15. approvals
-16. asset lifecycle transaction modules
-17. inventory
-18. reporting
-19. import/integration
-20. notifications
-21. audit/support infrastructure
+13. historical asset state (classification assignments, mutations, responsibility assignments, condition/lifecycle events, corrections)
+14. documents/evidence/photos/QR
+15. workflow engine
+16. approvals
+17. asset lifecycle transaction modules
+18. inventory
+19. reporting
+20. import/integration
+21. notifications
+22. audit/support infrastructure
 
 Actual migration dependency graph wins over numbering preference.
 
@@ -2536,7 +2708,7 @@ Before generating migrations:
 
 # 102. DATA DICTIONARY ACCEPTANCE
 
-Data Dictionary v1.0 establishes the physical baseline for:
+Data Dictionary v1.1 establishes the physical baseline for:
 
 - PostgreSQL types;
 - tenant-aware keys;

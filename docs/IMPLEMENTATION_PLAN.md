@@ -1,11 +1,11 @@
 # IMPLEMENTATION PLAN / ROADMAP — DESATARA
 
 **Document:** `docs/IMPLEMENTATION_PLAN.md`  
-**Version:** 1.0  
+**Version:** 1.1
 **Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Parent:** Master Blueprint DESATARA v3.0  
-**Upstream Contracts:** RTM v1.0 · PRD v1.0 · Workflow Specification v1.0 · RBAC & Regulatory Authority Matrix v1.0 · ERD v1.0 · Data Dictionary v1.0 · UI/UX Specification v1.0 · Security Specification v1.0 · Testing & Acceptance Criteria v1.0  
+**Upstream Contracts:** RTM v1.0 · PRD v1.0 · Workflow Specification v1.0 · RBAC & Regulatory Authority Matrix v1.0 · ERD v1.1 · Data Dictionary v1.1 · UI/UX Specification v1.0 · Security Specification v1.0 · Testing & Acceptance Criteria v1.0
 **Target Stack:** Laravel · Inertia.js · Vue 3 · Tailwind CSS · PostgreSQL  
 **Architecture:** Modular Monolith · Shared Database / Shared Schema · `tenant_id` Isolation  
 **Delivery Strategy:** Incremental · Dependency-First · Test-Gated · Security-by-Default
@@ -750,33 +750,50 @@ Prevent silent destruction of historical truth.
 - controlled asset corrections;
 - current-state projections.
 
-## Current State Pattern
+## Persistence Contract
 
-```text
-Historical Events
-→ authoritative history
+Authoritative B08 history uses:
 
-assets.current_*
-→ current projection
-```
+- `asset_classification_assignments` for initial classification and reclassification;
+- `asset_mutations` for initial placement/location movement;
+- `asset_responsibility_assignments` for responsibility history;
+- `asset_condition_events` for condition history;
+- `asset_lifecycle_events` for lifecycle transitions;
+- `asset_corrections` for controlled administrative correction evidence.
 
-## Atomicity
+Current projections on `assets` are `classification_id`, `current_location_id`, `current_responsible_party_id`, `condition`, and `lifecycle_status`. Historical tables/events remain authoritative for reconstructing prior state.
 
-History insertion and current projection update occur in one transaction.
+## Atomicity & Concurrency
+
+History insertion and its current projection update occur in one database transaction. Operations use `assets.lock_version` (or an equivalent row-locking strategy justified by implementation) so a stale writer cannot silently replace a newer state. Idempotency keys are enforced where the physical contract provides them.
+
+Initial registration must initialize classification, placement when present, responsibility when present, condition, and lifecycle history consistently with the asset projection.
+
+B08 may create nullable `workflow_instance_id` columns for future linkage, but it does not populate them or implement workflow/approval semantics. Their FK becomes enforceable in B12 after `workflow_instances` exists.
+
+## Correction Boundary
+
+`asset_corrections` is not a generic JSON patch endpoint. Correctable fields are server-side allowlisted. Material correction follows WF-AST-003 and records reason, actor, before, after, timestamp, and workflow/reference context when applicable.
+
+A correction involving classification, location, responsibility, condition, or lifecycle must use the corresponding domain history mechanism; existing historical rows are not rewritten.
 
 ## Required Tests
 
-- old classification preserved;
-- old location preserved;
-- old responsible party preserved;
-- old condition preserved;
-- lifecycle history preserved;
-- stale mutation rejected;
-- correction records before/after.
+- initial history matches current projections;
+- old classification preserved and only one open classification assignment exists;
+- old location preserved and mutation/current location update is atomic;
+- old responsible party preserved and current assignment remains consistent;
+- old condition preserved and current condition matches latest event;
+- lifecycle history preserved and arbitrary direct transition path is unavailable;
+- cross-tenant history references rejected at DB/application boundary;
+- stale mutation rejected without partial history/projection write;
+- duplicate idempotent event does not create duplicate history;
+- correction records reason/actor/before/after and cannot silently rewrite historical rows;
+- transaction rollback leaves both history and current projection unchanged.
 
 ## Exit Gate
 
-Historical state invariant PASS.
+Historical state invariant PASS with PostgreSQL constraint tests and service-level atomicity tests.
 
 ---
 
