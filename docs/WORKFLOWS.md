@@ -4,7 +4,7 @@
 
 **Document:** `docs/WORKFLOWS.md`  
 **Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Parent:** PRD DESATARA v1.0  
 **Architecture:** Master Blueprint DESATARA v3.0  
 **Regulatory Baseline:** Regulatory Traceability Matrix v1.0  

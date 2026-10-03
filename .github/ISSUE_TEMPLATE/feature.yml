@@ -1,0 +1,21 @@
+﻿name: Feature request
+description: Usulkan capability atau improvement DESATARA
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    attributes:
+      label: Problem
+      description: Masalah nyata apa yang ingin diselesaikan?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed outcome
+      description: Jelaskan outcome, bukan hanya bentuk UI/implementasi.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Contract impact
+      description: Sebutkan bila menyentuh regulasi, tenancy, authority, workflow, security, data, atau compatibility.

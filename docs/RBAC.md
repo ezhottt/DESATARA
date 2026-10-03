@@ -1,7 +1,7 @@
 # RBAC & REGULATORY AUTHORITY MATRIX — DESATARA
 
 **Document Version:** 1.0  
-**Status:** LOCKED  
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Upstream:** Architecture v3.0, RTM v1.0, PRD v1.0, Workflows v1.0
 

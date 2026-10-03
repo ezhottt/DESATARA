@@ -4,7 +4,7 @@
 
 **Document:** `docs/PRD.md`
 **Document Version:** 1.0
-**Status:** LOCKED
+**Status:** CONTROLLED BASELINE
 **Parent Architecture Baseline:** Master Blueprint DESATARA v3.0
 **Regulatory Reference:** Regulatory Traceability Matrix DESATARA v1.0
 **Product Model:** Multi-Desa / Multi-Tenant

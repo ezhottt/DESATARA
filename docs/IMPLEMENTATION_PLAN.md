@@ -1,11 +1,11 @@
 # IMPLEMENTATION PLAN / ROADMAP — DESATARA
 
 **Document:** `docs/IMPLEMENTATION_PLAN.md`  
-**Version:** 1.0  
-**Status:** LOCKED  
+**Version:** 1.1
+**Status:** CONTROLLED BASELINE
 **Product:** DESATARA — Platform Pengelolaan Aset Desa  
 **Parent:** Master Blueprint DESATARA v3.0  
-**Upstream Contracts:** RTM v1.0 · PRD v1.0 · Workflow Specification v1.0 · RBAC & Regulatory Authority Matrix v1.0 · ERD v1.0 · Data Dictionary v1.0 · UI/UX Specification v1.0 · Security Specification v1.0 · Testing & Acceptance Criteria v1.0  
+**Upstream Contracts:** RTM v1.0 · PRD v1.0 · Workflow Specification v1.0 · RBAC & Regulatory Authority Matrix v1.0 · ERD v1.1 · Data Dictionary v1.1 · UI/UX Specification v1.0 · Security Specification v1.0 · Testing & Acceptance Criteria v1.0
 **Target Stack:** Laravel · Inertia.js · Vue 3 · Tailwind CSS · PostgreSQL  
 **Architecture:** Modular Monolith · Shared Database / Shared Schema · `tenant_id` Isolation  
 **Delivery Strategy:** Incremental · Dependency-First · Test-Gated · Security-by-Default
@@ -369,26 +369,28 @@ becomes permanent P0 suite.
 
 Implementation is divided into **18 batches**.
 
-```text
-B00  Repository & Runtime Foundation
-B01  Authentication Foundation
-B02  Tenant Boundary
-B03  RBAC
-B04  Officials & Regulatory Authority
-B05  Regulatory Traceability
-B06  Master Data & Classification
-B07  Asset Core
-B08  Historical Asset State
-B09  Documents, Evidence & QR
-B10  Lifecycle Operations
-B11  Inventory & Reconciliation
-B12  Workflow & Approval Engine
-B13  Reporting
-B14  Import, Export & Interoperability
-B15  Dashboard, Search & UX Completion
-B16  Security / Performance / Accessibility Hardening
-B17  Production Readiness & Release
-```
+| Batch | Scope | Status |
+| --- | --- | --- |
+| B00 | Repository & Runtime Foundation | **Selesai** |
+| B01 | Authentication Foundation | **Selesai** |
+| B02 | Tenant Boundary | **Selesai** |
+| B03 | RBAC | **Selesai** |
+| B04 | Officials & Regulatory Authority | **Selesai** |
+| B05 | Regulatory Traceability | **Selesai** |
+| B06 | Master Data & Classification | **Selesai** |
+| B07 | Asset Core | **Selesai** |
+| B08 | Historical Asset State | **Selesai** |
+| B09 | Documents, Evidence & QR | **Selesai** |
+| B10 | Lifecycle Operations | **Selesai** |
+| B11 | Inventory & Reconciliation | **Selesai** |
+| B12 | Workflow & Approval Engine | **Selesai** |
+| B13 | Reporting | **Selesai** |
+| B14 | Import, Export & Interoperability | **Selesai** |
+| B15 | Dashboard, Search & UX Completion | **Selesai** |
+| B16 | Security / Performance / Accessibility Hardening | **Selesai - local gate GREEN** |
+| B17 | Production Readiness & Release | **Readiness implementation selesai; production evidence/release gate belum lengkap** |
+
+B00-B17 implementation baseline telah tercapai. Production readiness tetap evidence-based dan fail-closed sesuai PRODUCTION-READINESS.md.
 
 ---
 
@@ -721,6 +723,16 @@ Asset-level acquisition values are projection/summary only where retained.
 
 Asset can be safely registered with valid provenance.
 
+## Public Alpha Milestone
+
+After B07 passes its own gates, the project may publish `v0.1.0-alpha` as a demo/developer preview. The minimum vertical slice is:
+
+```text
+Authentication -> Tenant Context -> RBAC/Authority Foundation -> Master Data -> Asset Registration -> Asset List/Detail
+```
+
+This alpha is explicitly **not production-ready** and does not waive B08-B17 requirements. It exists to make implementation progress testable by contributors before v1.0.0.
+
 ---
 
 # 25. BATCH 08 — HISTORICAL ASSET STATE
@@ -740,33 +752,50 @@ Prevent silent destruction of historical truth.
 - controlled asset corrections;
 - current-state projections.
 
-## Current State Pattern
+## Persistence Contract
 
-```text
-Historical Events
-→ authoritative history
+Authoritative B08 history uses:
 
-assets.current_*
-→ current projection
-```
+- `asset_classification_assignments` for initial classification and reclassification;
+- `asset_mutations` for initial placement/location movement;
+- `asset_responsibility_assignments` for responsibility history;
+- `asset_condition_events` for condition history;
+- `asset_lifecycle_events` for lifecycle transitions;
+- `asset_corrections` for controlled administrative correction evidence.
 
-## Atomicity
+Current projections on `assets` are `classification_id`, `current_location_id`, `current_responsible_party_id`, `condition`, and `lifecycle_status`. Historical tables/events remain authoritative for reconstructing prior state.
 
-History insertion and current projection update occur in one transaction.
+## Atomicity & Concurrency
+
+History insertion and its current projection update occur in one database transaction. Operations use `assets.lock_version` (or an equivalent row-locking strategy justified by implementation) so a stale writer cannot silently replace a newer state. Idempotency keys are enforced where the physical contract provides them.
+
+Initial registration must initialize classification, placement when present, responsibility when present, condition, and lifecycle history consistently with the asset projection.
+
+B08 may create nullable `workflow_instance_id` columns for future linkage, but it does not populate them or implement workflow/approval semantics. Their FK becomes enforceable in B12 after `workflow_instances` exists.
+
+## Correction Boundary
+
+`asset_corrections` is not a generic JSON patch endpoint. Correctable fields are server-side allowlisted. Material correction follows WF-AST-003 and records reason, actor, before, after, timestamp, and workflow/reference context when applicable.
+
+A correction involving classification, location, responsibility, condition, or lifecycle must use the corresponding domain history mechanism; existing historical rows are not rewritten.
 
 ## Required Tests
 
-- old classification preserved;
-- old location preserved;
-- old responsible party preserved;
-- old condition preserved;
-- lifecycle history preserved;
-- stale mutation rejected;
-- correction records before/after.
+- initial history matches current projections;
+- old classification preserved and only one open classification assignment exists;
+- old location preserved and mutation/current location update is atomic;
+- old responsible party preserved and current assignment remains consistent;
+- old condition preserved and current condition matches latest event;
+- lifecycle history preserved and arbitrary direct transition path is unavailable;
+- cross-tenant history references rejected at DB/application boundary;
+- stale mutation rejected without partial history/projection write;
+- duplicate idempotent event does not create duplicate history;
+- correction records reason/actor/before/after and cannot silently rewrite historical rows;
+- transaction rollback leaves both history and current projection unchanged.
 
 ## Exit Gate
 
-Historical state invariant PASS.
+Historical state invariant PASS with PostgreSQL constraint tests and service-level atomicity tests.
 
 ---
 
@@ -2034,7 +2063,7 @@ inventory observation
 updateStatus($request->status)
 ```
 
-These patterns violate locked architecture.
+These patterns violate the controlled architecture baseline.
 
 ---
 
@@ -2083,7 +2112,15 @@ Audit is evidence-driven and read-only first.
 
 Document versions are independent from application versions.
 
-Initial production application release:
+Pre-production public milestone after B07:
+
+```text
+DESATARA v0.1.0-alpha
+```
+
+This is a demo/developer preview, not a production-readiness claim.
+
+Initial production application release remains:
 
 ```text
 DESATARA v1.0.0
@@ -2122,6 +2159,10 @@ PATCH → backward-compatible fix
 
 Exact release policy may be refined after first production release.
 
+## Demo / Onboarding Data Strategy
+
+Demo seed data must be synthetic and must not contain real village credentials, personal data, or private evidence. A complete onboarding dataset is introduced only after B02 Tenant Boundary and B03 RBAC are implemented, so tenant, membership, and role relationships are represented through the real security model rather than temporary shortcuts.
+
 ---
 
 # 85. DEFINITION OF IMPLEMENTATION COMPLETE
@@ -2148,9 +2189,9 @@ Production smoke verified
 
 ---
 
-# 86. DOCUMENTATION FREEZE
+# 86. DOCUMENTATION BASELINE
 
-With this document locked, the pre-implementation documentation baseline consists of:
+With this document under controlled baseline, the pre-implementation documentation baseline consists of:
 
 ```text
 Master Blueprint DESATARA v3.0
@@ -2195,9 +2236,9 @@ No additional architecture document is required before bootstrap unless a contra
 
 ---
 
-# 88. LOCKED ROADMAP INVARIANTS
+# 88. CONTROLLED ROADMAP INVARIANTS
 
-The following are locked:
+The following are baseline invariants and require explicit reviewed change:
 
 1. **Tenant boundary is implemented before asset-domain expansion.**
 2. **RBAC and regulatory authority remain separate.**
@@ -2216,12 +2257,10 @@ The following are locked:
 
 # 89. FINAL STATUS
 
-**IMPLEMENTATION PLAN / ROADMAP DESATARA v1.0 — LOCKED**
+**IMPLEMENTATION PLAN / ROADMAP DESATARA v1.0 — IMPLEMENTATION BASELINE COMPLETE**
 
-**DESATARA PRE-IMPLEMENTATION DOCUMENTATION BASELINE — COMPLETE**
+B00-B16 telah selesai dan terverifikasi pada local quality gates. B17 production-readiness tooling dan runbook telah diimplementasikan.
 
-The project is authorized to proceed to:
+Release production tetap **NOT READY / fail-closed** sampai mandatory external evidence pada PRODUCTION-READINESS.md terpenuhi, termasuk TLS, backup + isolated restore drill, queue, scheduler, production smoke, rollback/recovery path, dan unresolved P0 = 0.
 
-> **B00 — Repository & Runtime Foundation**
-
-without redesigning the locked architecture unless implementation reveals a documented contradiction, regulatory requirement, or verified technical blocker.
+Integrasi baseline B00-B17 ke main dilakukan melalui release PR; status integrasi dan deployment tidak boleh disamakan dengan status implementasi batch.

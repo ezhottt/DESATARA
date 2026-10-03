@@ -2,7 +2,7 @@
 
 ## Platform Pengelolaan Aset Desa
 
-**Status:** LOCKED
+**Status:** CONTROLLED BASELINE
 **Model Produk:** Multi-Desa / Multi-Tenant
 **Arsitektur:** Modular Monolith
 **Target:** Pemerintah Desa di Indonesia

@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureTenantOperational;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequireTenantPermission;
+use App\Http\Middleware\ResolveTenantContext;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             HandleInertiaRequests::class,
+            SecurityHeaders::class,
+        ]);
+
+        $middleware->alias([
+            'tenant.context' => ResolveTenantContext::class,
+            'tenant.operational' => EnsureTenantOperational::class,
+            'permission' => RequireTenantPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
