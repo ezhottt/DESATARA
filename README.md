@@ -4,7 +4,7 @@
 
 DESATARA adalah platform open-source untuk membantu Pemerintah Desa mengelola aset secara terstruktur, dapat ditelusuri, dan sadar regulasi. Fokusnya bukan sekadar daftar barang, tetapi tenant isolation, historical integrity, evidence, kewenangan, workflow, pelaporan, dan auditability.
 
-> **Status:** aktif dikembangkan. B00 Repository & Runtime Foundation selesai. B01 Authentication telah berjalan dan terverifikasi lokal; merge masih menunggu remote CI. DESATARA belum merupakan aplikasi production-ready.
+> **Status:** implementasi roadmap B00-B16 selesai dan terverifikasi lokal. B17 production-readiness tooling telah diimplementasikan; release production tetap fail-closed sampai seluruh evidence environment production terpenuhi.
 
 ## Kenapa DESATARA?
 
@@ -17,7 +17,7 @@ Pengelolaan aset desa membutuhkan lebih dari CRUD: siapa yang berwenang, bukti a
 - Branding dasar DESATARA.
 - Automated test, Pint, PHPStan/Larastan, dan production build sebagai quality gate lokal.
 
-Fitur tenant, RBAC, master data, aset, inventarisasi, workflow, dan laporan masih mengikuti roadmap dan **belum boleh dianggap tersedia**.
+Tenant boundary, RBAC, authority, master data, asset core, historical state, evidence/QR, lifecycle, inventory, workflow, reporting, interoperability, dashboard/search, dan hardening telah diimplementasikan pada baseline B00-B17. Status implementasi tidak sama dengan deklarasi production-ready.
 
 ## Quick Start
 
@@ -42,17 +42,28 @@ DESATARA diposisikan sebagai platform open-source pendukung tata kelola: eksplor
 
 ## Roadmap Singkat
 
-| Milestone | Cakupan | Status |
+| Batch | Scope | Status |
 | --- | --- | --- |
-| B00 | Repository & Runtime Foundation | Selesai |
-| B01 | Authentication Foundation | Implementasi lokal selesai; menunggu remote CI/merge |
-| B02 | Tenant Boundary | Berikutnya setelah B01 lolos gate |
-| B03-B06 | RBAC, authority, regulatory traceability, master data | Direncanakan |
-| B07 | Asset Core + vertical slice | Target **v0.1.0-alpha** |
-| B08-B16 | History, evidence, lifecycle, inventory, workflow, reporting, hardening | Direncanakan |
-| B17 | Production Readiness | Target **v1.0.0** |
+| B00 | Repository & Runtime Foundation | **Selesai** |
+| B01 | Authentication Foundation | **Selesai** |
+| B02 | Tenant Boundary | **Selesai** |
+| B03 | RBAC | **Selesai** |
+| B04 | Officials & Regulatory Authority | **Selesai** |
+| B05 | Regulatory Traceability | **Selesai** |
+| B06 | Master Data & Classification | **Selesai** |
+| B07 | Asset Core | **Selesai** |
+| B08 | Historical Asset State | **Selesai** |
+| B09 | Documents, Evidence & QR | **Selesai** |
+| B10 | Lifecycle Operations | **Selesai** |
+| B11 | Inventory & Reconciliation | **Selesai** |
+| B12 | Workflow & Approval Engine | **Selesai** |
+| B13 | Reporting | **Selesai** |
+| B14 | Import, Export & Interoperability | **Selesai** |
+| B15 | Dashboard, Search & UX Completion | **Selesai** |
+| B16 | Security, Performance & Accessibility Hardening | **Selesai - local gate GREEN** |
+| B17 | Production Readiness & Release | **Readiness implementation selesai; production evidence/release gate belum lengkap** |
 
-Target `v0.1.0-alpha` setelah B07 adalah **demo/developer preview**, bukan deklarasi production-ready.
+Target release tetap v1.0.0. Status B17 tidak boleh ditafsirkan sebagai production-ready sampai mandatory external evidence pada docs/PRODUCTION-READINESS.md terpenuhi.
 
 ## Dokumentasi
 

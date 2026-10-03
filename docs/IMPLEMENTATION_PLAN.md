@@ -369,26 +369,28 @@ becomes permanent P0 suite.
 
 Implementation is divided into **18 batches**.
 
-```text
-B00  Repository & Runtime Foundation
-B01  Authentication Foundation
-B02  Tenant Boundary
-B03  RBAC
-B04  Officials & Regulatory Authority
-B05  Regulatory Traceability
-B06  Master Data & Classification
-B07  Asset Core
-B08  Historical Asset State
-B09  Documents, Evidence & QR
-B10  Lifecycle Operations
-B11  Inventory & Reconciliation
-B12  Workflow & Approval Engine
-B13  Reporting
-B14  Import, Export & Interoperability
-B15  Dashboard, Search & UX Completion
-B16  Security / Performance / Accessibility Hardening
-B17  Production Readiness & Release
-```
+| Batch | Scope | Status |
+| --- | --- | --- |
+| B00 | Repository & Runtime Foundation | **Selesai** |
+| B01 | Authentication Foundation | **Selesai** |
+| B02 | Tenant Boundary | **Selesai** |
+| B03 | RBAC | **Selesai** |
+| B04 | Officials & Regulatory Authority | **Selesai** |
+| B05 | Regulatory Traceability | **Selesai** |
+| B06 | Master Data & Classification | **Selesai** |
+| B07 | Asset Core | **Selesai** |
+| B08 | Historical Asset State | **Selesai** |
+| B09 | Documents, Evidence & QR | **Selesai** |
+| B10 | Lifecycle Operations | **Selesai** |
+| B11 | Inventory & Reconciliation | **Selesai** |
+| B12 | Workflow & Approval Engine | **Selesai** |
+| B13 | Reporting | **Selesai** |
+| B14 | Import, Export & Interoperability | **Selesai** |
+| B15 | Dashboard, Search & UX Completion | **Selesai** |
+| B16 | Security / Performance / Accessibility Hardening | **Selesai - local gate GREEN** |
+| B17 | Production Readiness & Release | **Readiness implementation selesai; production evidence/release gate belum lengkap** |
+
+B00-B17 implementation baseline telah tercapai. Production readiness tetap evidence-based dan fail-closed sesuai PRODUCTION-READINESS.md.
 
 ---
 
@@ -2255,12 +2257,10 @@ The following are baseline invariants and require explicit reviewed change:
 
 # 89. FINAL STATUS
 
-**IMPLEMENTATION PLAN / ROADMAP DESATARA v1.0 — LOCKED**
+**IMPLEMENTATION PLAN / ROADMAP DESATARA v1.0 — IMPLEMENTATION BASELINE COMPLETE**
 
-**DESATARA PRE-IMPLEMENTATION DOCUMENTATION BASELINE — COMPLETE**
+B00-B16 telah selesai dan terverifikasi pada local quality gates. B17 production-readiness tooling dan runbook telah diimplementasikan.
 
-The project is authorized to proceed to:
+Release production tetap **NOT READY / fail-closed** sampai mandatory external evidence pada PRODUCTION-READINESS.md terpenuhi, termasuk TLS, backup + isolated restore drill, queue, scheduler, production smoke, rollback/recovery path, dan unresolved P0 = 0.
 
-> **B00 — Repository & Runtime Foundation**
-
-without redesigning the controlled architecture baseline unless implementation reveals a documented contradiction, regulatory requirement, or verified technical blocker.
+Integrasi baseline B00-B17 ke main dilakukan melalui release PR; status integrasi dan deployment tidak boleh disamakan dengan status implementasi batch.
