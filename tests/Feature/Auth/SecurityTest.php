@@ -21,6 +21,16 @@ class SecurityTest extends TestCase
         $this->get('/')->assertRedirect('/login');
     }
 
+    public function test_web_responses_include_security_headers_and_private_cache_control(): void
+    {
+        $this->get('/login')
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
+            ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+            ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+            ->assertHeader('Cache-Control', 'no-store, private');
+    }
+
     public function test_login_is_throttled_after_repeated_failures(): void
     {
         Event::fake([Lockout::class]);

@@ -14,7 +14,8 @@ class AssetSearchController extends Controller
 {
     public function __invoke(Request $request, TenantContext $context): Response
     {
-        $query = trim((string) $request->query('q', ''));
+        $validated = $request->validate(['q' => ['nullable', 'string', 'max:100']]);
+        $query = trim((string) ($validated['q'] ?? ''));
         $like = '%'.$query.'%';
         $assets = Asset::query()->where('tenant_id', $context->id());
 

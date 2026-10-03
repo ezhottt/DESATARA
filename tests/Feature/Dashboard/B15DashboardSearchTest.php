@@ -43,6 +43,20 @@ class B15DashboardSearchTest extends TestCase
         $this->actingAs($user)->withSession(['active_tenant_uuid' => $tenant->uuid])->get('/search')->assertForbidden();
     }
 
+    public function test_search_rejects_oversized_queries_and_is_rate_limited(): void
+    {
+        [$tenant, $user] = $this->context();
+        $this->actingAs($user)->withSession(['active_tenant_uuid' => $tenant->uuid]);
+
+        $this->get('/search?q='.str_repeat('a', 101))->assertSessionHasErrors('q');
+
+        for ($attempt = 0; $attempt < 60; $attempt++) {
+            $this->get('/search?q=asset');
+        }
+
+        $this->get('/search?q=asset')->assertTooManyRequests();
+    }
+
     private function context(): array
     {
         $tenant = Tenant::factory()->active()->create();
