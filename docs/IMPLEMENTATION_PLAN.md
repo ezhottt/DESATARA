@@ -2269,7 +2269,7 @@ Status: **IMPLEMENTED LOCALLY / AUTOMATED VERIFICATION GREEN**
 
 Inertia/Vue product surfaces, route authorization, active-tenant shell, tenant-scoped master data and assets, lifecycle actions, inventory observation/reconciliation/finalization, workflow approval actions, reporting finalization/revision/export, interoperability import/export, and tenant administration are connected to the existing B00-B17 services and models. Focused surface tests and the complete serial verification gates pass on the current checkout. This does not change deployment or production-readiness status.
 
-Current evidence: full PHPUnit, Pint, PHPStan, Vite build, and git diff checks pass. Production readiness remains fail-closed and requires the mandatory external evidence in PRODUCTION-READINESS.md.
+Current evidence on integrated `main`: PHPUnit **122 passed / 417 assertions**, Pint **180 files PASS**, PHPStan **0 errors**, Vite production build **574 modules transformed**, and `git diff --check` PASS. Checkpoint B18-B25: `332e1ee` (`feat: complete B18-B25 product surfaces`). Production readiness remains fail-closed and requires the mandatory external evidence in PRODUCTION-READINESS.md.
 
 ---
 
@@ -2281,4 +2281,4 @@ B00-B16 telah selesai dan terverifikasi pada local quality gates. B17 production
 
 Release production tetap **NOT READY / fail-closed** sampai mandatory external evidence pada PRODUCTION-READINESS.md terpenuhi, termasuk TLS, backup + isolated restore drill, queue, scheduler, production smoke, rollback/recovery path, dan unresolved P0 = 0.
 
-Integrasi baseline B00-B17 ke main dilakukan melalui release PR; status integrasi dan deployment tidak boleh disamakan dengan status implementasi batch.
+Baseline B00-B25 telah terintegrasi ke `main`; B18-B25 masuk melalui checkpoint `332e1ee` dan telah diverifikasi ulang setelah fast-forward. Status integrasi source code tidak boleh disamakan dengan status deployment atau production readiness.

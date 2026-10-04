@@ -4,7 +4,7 @@
 
 DESATARA adalah platform open-source untuk membantu Pemerintah Desa mengelola aset secara terstruktur, dapat ditelusuri, dan sadar regulasi. Fokusnya bukan sekadar daftar barang, tetapi tenant isolation, historical integrity, evidence, kewenangan, workflow, pelaporan, dan auditability.
 
-> **Status:** implementasi roadmap B00-B16 selesai dan terverifikasi lokal. B17 production-readiness tooling telah diimplementasikan; release production tetap fail-closed sampai seluruh evidence environment production terpenuhi.
+> **Status:** baseline implementasi B00-B25 telah terintegrasi ke `main` dan terverifikasi pada quality gate lokal. B17 production-readiness tooling telah diimplementasikan; release production tetap fail-closed sampai seluruh evidence environment production terpenuhi.
 
 ## Kenapa DESATARA?
 
@@ -17,7 +17,7 @@ Pengelolaan aset desa membutuhkan lebih dari CRUD: siapa yang berwenang, bukti a
 - Branding dasar DESATARA.
 - Automated test, Pint, PHPStan/Larastan, dan production build sebagai quality gate lokal.
 
-Tenant boundary, RBAC, authority, master data, asset core, historical state, evidence/QR, lifecycle, inventory, workflow, reporting, interoperability, dashboard/search, dan hardening telah diimplementasikan pada baseline B00-B17. Status implementasi tidak sama dengan deklarasi production-ready.
+Tenant boundary, RBAC, authority, master data, asset core, historical state, evidence/QR, lifecycle, inventory, workflow, reporting, interoperability, dashboard/search, hardening, serta product surface B18-B25 telah diimplementasikan dan terintegrasi pada `main`. Status implementasi tidak sama dengan deklarasi production-ready.
 
 ## Quick Start
 
@@ -62,7 +62,7 @@ DESATARA diposisikan sebagai platform open-source pendukung tata kelola: eksplor
 | B15 | Dashboard, Search & UX Completion | **Selesai** |
 | B16 | Security, Performance & Accessibility Hardening | **Selesai - local gate GREEN** |
 | B17 | Production Readiness & Release | **Readiness implementation selesai; production evidence/release gate belum lengkap** |
-| B18-B25 | Product Surface Completion | **Verified locally; automated gates green** |
+| B18-B25 | Product Surface Completion | **Selesai - terintegrasi ke `main`; quality gate lokal hijau** |
 
 Target release tetap v1.0.0. Status B17 tidak boleh ditafsirkan sebagai production-ready sampai mandatory external evidence pada docs/PRODUCTION-READINESS.md terpenuhi.
 
