@@ -389,6 +389,14 @@ Implementation is divided into **18 batches**.
 | B15 | Dashboard, Search & UX Completion | **Selesai** |
 | B16 | Security / Performance / Accessibility Hardening | **Selesai - local gate GREEN** |
 | B17 | Production Readiness & Release | **Readiness implementation selesai; production evidence/release gate belum lengkap** |
+| B18 | Application Shell & Navigation | **Verified locally - automated gates green** |
+| B19 | Master Data Surface | **Verified locally - automated gates green** |
+| B20 | Asset Surface | **Verified locally - automated gates green** |
+| B21 | Lifecycle Surface | **Verified locally - automated gates green** |
+| B22 | Inventory Surface | **Verified locally - automated gates green** |
+| B23 | Workflow Approval Surface | **Verified locally - automated gates green** |
+| B24 | Reporting & Interoperability Surface | **Verified locally - automated gates green** |
+| B25 | Administration Surface | **Verified locally - automated gates green** |
 
 B00-B17 implementation baseline telah tercapai. Production readiness tetap evidence-based dan fail-closed sesuai PRODUCTION-READINESS.md.
 
@@ -2255,11 +2263,21 @@ The following are baseline invariants and require explicit reviewed change:
 
 ---
 
-# 89. FINAL STATUS
+# 89. B18-B25 - PRODUCT SURFACE COMPLETION
+
+Status: **IMPLEMENTED LOCALLY / AUTOMATED VERIFICATION GREEN**
+
+Inertia/Vue product surfaces, route authorization, active-tenant shell, tenant-scoped master data and assets, lifecycle actions, inventory observation/reconciliation/finalization, workflow approval actions, reporting finalization/revision/export, interoperability import/export, and tenant administration are connected to the existing B00-B17 services and models. Focused surface tests and the complete serial verification gates pass on the current checkout. This does not change deployment or production-readiness status.
+
+Current evidence: full PHPUnit, Pint, PHPStan, Vite build, and git diff checks pass. Production readiness remains fail-closed and requires the mandatory external evidence in PRODUCTION-READINESS.md.
+
+---
+
+# 90. FINAL STATUS
 
 **IMPLEMENTATION PLAN / ROADMAP DESATARA v1.0 — IMPLEMENTATION BASELINE COMPLETE**
 
-B00-B16 telah selesai dan terverifikasi pada local quality gates. B17 production-readiness tooling dan runbook telah diimplementasikan.
+B00-B16 telah selesai dan terverifikasi pada local quality gates. B17 production-readiness tooling dan runbook telah diimplementasikan. B18-B25 telah diverifikasi pada local automated gates.
 
 Release production tetap **NOT READY / fail-closed** sampai mandatory external evidence pada PRODUCTION-READINESS.md terpenuhi, termasuk TLS, backup + isolated restore drill, queue, scheduler, production smoke, rollback/recovery path, dan unresolved P0 = 0.
 

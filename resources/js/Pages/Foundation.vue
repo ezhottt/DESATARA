@@ -13,7 +13,7 @@ defineProps({
             <section class="max-w-2xl">
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Platform Pengelolaan Aset Desa</p>
                 <h1 class="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">{{ product }}</h1>
-                <p class="mt-6 text-lg leading-8 text-slate-600">Repository & Runtime Foundation aktif. Modul domain belum diimplementasikan.</p>
+                <p class="mt-6 text-lg leading-8 text-slate-600">Pilih tenant aktif untuk masuk ke dashboard DESATARA dan mengelola aset sesuai kewenangan Anda.</p>
             </section>
         </div>
     </main>

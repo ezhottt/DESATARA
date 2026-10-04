@@ -1,6 +1,9 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import AppShell from '../Layouts/AppShell.vue';
+
+defineOptions({ layout: AppShell });
 
 const props = defineProps({ query: String, assets: Object, locations: Array, responsible_parties: Array });
 const query = ref(props.query);

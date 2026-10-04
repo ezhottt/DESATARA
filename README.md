@@ -62,6 +62,7 @@ DESATARA diposisikan sebagai platform open-source pendukung tata kelola: eksplor
 | B15 | Dashboard, Search & UX Completion | **Selesai** |
 | B16 | Security, Performance & Accessibility Hardening | **Selesai - local gate GREEN** |
 | B17 | Production Readiness & Release | **Readiness implementation selesai; production evidence/release gate belum lengkap** |
+| B18-B25 | Product Surface Completion | **Verified locally; automated gates green** |
 
 Target release tetap v1.0.0. Status B17 tidak boleh ditafsirkan sebagai production-ready sampai mandatory external evidence pada docs/PRODUCTION-READINESS.md terpenuhi.
 
