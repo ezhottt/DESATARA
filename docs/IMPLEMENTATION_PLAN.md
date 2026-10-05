@@ -2282,3 +2282,15 @@ B00-B16 telah selesai dan terverifikasi pada local quality gates. B17 production
 Release production tetap **NOT READY / fail-closed** sampai mandatory external evidence pada PRODUCTION-READINESS.md terpenuhi, termasuk TLS, backup + isolated restore drill, queue, scheduler, production smoke, rollback/recovery path, dan unresolved P0 = 0.
 
 Baseline B00-B25 telah terintegrasi ke `main`; B18-B25 masuk melalui checkpoint `332e1ee` dan telah diverifikasi ulang setelah fast-forward. Status integrasi source code tidak boleh disamakan dengan status deployment atau production readiness.
+
+# 91. B26 - EXCEL IMPORT & LEGACY DATA MIGRATION
+
+Status: **IMPLEMENTED LOCALLY / FINAL VERIFICATION GREEN**
+
+B26 menambahkan onboarding data aset lama melalui CSV dan XLSX dengan preview sebelum commit, strategi atomic/partial, tenant-scoped import job/row/error, deteksi duplicate asset code, batas 5.000 baris dan 10 MB, template CSV, serta auto-mapping header aset desa berbahasa Indonesia. Format XLS lama ditolak dengan validation feedback yang meminta pengguna menyimpan ulang sebagai XLSX atau CSV.
+
+Scope B26 sengaja tidak mengklaim mapping wizard bebas, saved mapping preset, background queue, atau dukungan binary XLS. XLSX dibaca tanpa mengeksekusi formula. Final focused evidence: B26 feature tests **5 passed / 30 assertions**, termasuk CSV preview+commit, XLSX end-to-end preview+commit, duplicate protection, permission/navigation, dan friendly legacy-XLS rejection.
+
+Production readiness tetap mengikuti B17 dan tidak berubah oleh penyelesaian B26.
+
+---
