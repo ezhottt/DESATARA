@@ -60,3 +60,13 @@ Kode, migration, policy, service, UI, API, job, report, import/export, test, dan
 Artifact berikut dibuat ketika lifecycle membutuhkannya: `BACKUP-RESTORE.md`, `CHANGELOG.md`, OpenAPI machine-readable contract, runbook operasi, dan release evidence. Ketiadaannya sebelum fase yang ditentukan tidak boleh ditafsirkan sebagai izin mengabaikan requirement upstream.
 
 **DOCUMENT CONTROL & CONTRACT INDEX DESATARA v1.0 — CONTROLLED BASELINE**
+
+
+## 8. Current implementation checkpoint (2026-10-05)
+
+- B00-B25 are integrated on `main` through baseline commit `b0f1f23`.
+- B26 Excel Import & Legacy Data Migration plus product UX closeout is proposed in PR #3 from `feat/b26-ui-closeout`.
+- B26 does not alter the controlled regulatory, tenancy, authority, workflow, or historical-integrity contracts.
+- Current local verification evidence on the PR branch: PHPUnit **135 passed / 506 assertions**, Pint **185 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, and `git diff --check` **PASS**.
+- GitHub Actions workflow is configured as four parallel gates (`test`, `pint`, `phpstan`, `frontend`). Run #8 was triggered but jobs were not started because GitHub reported an account-level billing lock; this is external evidence blockage, not a green CI result.
+- B17 remains fail-closed: `PRODUCTION READY = NO` until mandatory external evidence is current and machine-verifiable.

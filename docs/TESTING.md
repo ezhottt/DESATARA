@@ -2178,3 +2178,17 @@ The following are locked:
 **TESTING & ACCEPTANCE CRITERIA DESATARA v1.0 — LOCKED**
 
 This document is the canonical verification and release-acceptance contract for DESATARA.
+
+
+# 155. CURRENT VERIFICATION EVIDENCE - 2026-10-05
+
+The B26/UI closeout branch was verified locally with current reproducible evidence:
+
+- PHPUnit: **135 passed / 506 assertions**.
+- Pint: **185 files PASS**.
+- PHPStan/Larastan: **0 errors**.
+- Vite production build: **PASS**.
+- `git diff --check`: **PASS**.
+- Focused B26 import suite: **5 passed / 30 assertions**, covering CSV preview/commit, XLSX end-to-end preview/commit, duplicate protection, permission/navigation, and friendly legacy-XLS rejection.
+
+GitHub Actions PR run #8 discovered all four configured jobs but did not start their steps because GitHub reported an account-level billing lock. It must not be recorded as CI PASS. Rerun is required after the external account lock is cleared.
