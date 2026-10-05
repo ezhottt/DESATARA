@@ -2192,3 +2192,10 @@ The B26/UI closeout branch was verified locally with current reproducible eviden
 - Focused B26 import suite: **5 passed / 30 assertions**, covering CSV preview/commit, XLSX end-to-end preview/commit, duplicate protection, permission/navigation, and friendly legacy-XLS rejection.
 
 GitHub Actions PR run #8 discovered all four configured jobs but did not start their steps because GitHub reported an account-level billing lock. It must not be recorded as CI PASS. Rerun is required after the external account lock is cleared.
+
+
+# 156. B26.1 UI / PRODUCT SURFACE HARDENING - 2026-10-05
+
+Screenshot-driven verification found a Vue template branching defect and literal mojibake in active UI sources. B26.1 fixes template ref unwrapping for inventory, approvals, reports, master-data, and administration surfaces; localizes `fair` as **Rusak ringan** and responsible-party types to human-readable Indonesian; resolves responsible-party display names; and removes tracked mojibake from active Vue/controller sources.
+
+Fresh post-fix evidence: PHPUnit **137 passed / 514 assertions**, Pint **186 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, `git diff --check` **PASS**, and active-source mojibake scan **NONE**.
