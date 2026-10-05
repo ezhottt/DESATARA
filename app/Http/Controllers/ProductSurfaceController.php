@@ -70,7 +70,7 @@ final class ProductSurfaceController extends Controller
         $data = $request->validate(['asset_uuids' => ['required', 'array', 'min:1', 'max:100'], 'asset_uuids.*' => ['required', 'uuid', 'distinct']]);
         $assets = Asset::query()->where('tenant_id', $context->id())->with('classification')->whereIn('uuid', $data['asset_uuids'])->get();
         abort_unless($assets->count() === count($data['asset_uuids']), 422);
-        abort_if($assets->contains(fn (Asset $asset) => blank($asset->classification?->code) || blank($asset->register_number)), 422, 'Label hanya dapat dicetak untuk aset yang sudah memiliki kode barang dan nomor register.');
+        abort_if($assets->contains(fn (Asset $asset) => blank($asset->classification?->code) || blank($asset->register_number)), 422, 'Label hanya dapat dicetak untuk aset yang sudah memiliki kode barang dan NUP.');
 
         $labels = DB::transaction(fn () => $assets->map(function (Asset $asset) use ($context, $qr, $request): array {
             $active = AssetQrToken::query()->where('tenant_id', $context->id())->where('asset_id', $asset->id)->where('status', 'active')->lockForUpdate()->first();
@@ -82,7 +82,7 @@ final class ProductSurfaceController extends Controller
                 'uuid' => $asset->uuid,
                 'name' => $asset->name,
                 'item_code' => $asset->classification?->code,
-                'register_number' => $asset->register_number,
+                'nup' => $asset->nup,
                 'qr_url' => route('qr.public', ['token' => $raw]),
             ];
         })->values());
@@ -436,7 +436,7 @@ final class ProductSurfaceController extends Controller
     {
         return response()->streamDownload(function (): void {
             $stream = fopen('php://output', 'wb');
-            fputcsv($stream, ['Nama Barang', 'Kode Barang', 'Nomor Register', 'Kode Klasifikasi', 'Tahun Perolehan', 'Asal Perolehan', 'Harga Perolehan', 'Jumlah', 'Satuan', 'Sumber Dana', 'Lokasi', 'Kondisi']);
+            fputcsv($stream, ['Nama Barang', 'Kode Barang', 'NUP', 'Kode Klasifikasi', 'Tahun Perolehan', 'Asal Perolehan', 'Harga Perolehan', 'Jumlah', 'Satuan', 'Sumber Dana', 'Lokasi', 'Kondisi']);
             fputcsv($stream, ['Contoh Laptop', 'AST-001', '0001', 'ELEKTRONIK', '2026', 'Pembelian', '12500000', '1', 'UNIT', 'APBDES', 'KANTOR', 'Baik']);
             fclose($stream);
         }, 'template-impor-aset-desatara.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);

@@ -2346,3 +2346,19 @@ Physical label preparation is rejected when either the administrative item code 
 ## Correction to earlier B26.2 scope
 
 The initial B26.2 implementation exposed 50 x 30 mm and 60 x 40 mm as product choices. Those sizes were product assumptions, not verified regulatory requirements. They have been removed. The label surface now states that physical media sizing follows the village's printer/media needs and is not represented as a regulatory sticker dimension.
+
+
+# 94. B26.2 NUP SEMANTIC HARDENING
+
+The current Permendagri 3/2024 Buku Inventaris Aset Desa terminology uses **NUP (Nomor Urut Pendaftaran)**. DESATARA therefore treats NUP as the current operator-facing/domain term.
+
+Compatibility decision:
+- physical database column `assets.register_number` remains unchanged to avoid a destructive schema/API/history migration;
+- `Asset::nup` is the current domain alias backed by that storage column;
+- current UI and asset labels say **NUP**;
+- new CSV template exports the header **NUP**;
+- import accepts `NUP` / `Nomor Urut Pendaftaran` first, while legacy `Nomor Register` / `No Register` remain accepted migration aliases;
+- historical inventory snapshot column names are not rewritten;
+- label printing continues to fail closed when kode barang or NUP is missing.
+
+This is a semantic compatibility migration, not a destructive data rewrite.

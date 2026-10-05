@@ -140,7 +140,7 @@ final class LegacyAssetFileReader
         return array_filter([
             'name' => $this->text($raw['nama_barang'] ?? $raw['nama_aset'] ?? null),
             'asset_code' => $this->text($raw['kode_barang'] ?? $raw['kode_aset'] ?? null),
-            'register_number' => $this->text($raw['nomor_register'] ?? $raw['no_register'] ?? null),
+            'register_number' => $this->text($raw['nup'] ?? $raw['nomor_urut_pendaftaran'] ?? $raw['nomor_register'] ?? $raw['no_register'] ?? null),
             'classification_id' => $classificationCode ? AssetClassification::query()->where('code', trim((string) $classificationCode))->where('status', 'active')->value('id') : null,
             'acquisition_year' => $this->integer($raw['tahun_perolehan'] ?? null),
             'acquisition_origin' => $this->text($raw['asal_perolehan'] ?? null),

@@ -24,14 +24,14 @@ onMounted(async () => {
         <Link href="/assets" class="text-sm font-semibold text-blue-700">&lt;- Kembali ke aset</Link>
         <p class="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-blue-700">Pengamanan & inventarisasi</p>
         <h1 class="mt-2 text-3xl font-bold">Label identifikasi aset</h1>
-        <p class="mt-2 max-w-3xl text-slate-600">Identitas administratif pada label menggunakan kode barang dan nomor register dari penatausahaan aset.</p>
+        <p class="mt-2 max-w-3xl text-slate-600">Identitas administratif pada label menggunakan kode barang dan NUP dari penatausahaan aset.</p>
       </div>
       <button type="button" class="rounded-lg bg-[#0B2E5B] px-4 py-2.5 font-bold text-white" @click="printLabels">Cetak {{ labels.length }} label</button>
     </header>
 
     <section class="no-print space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
       <p><strong>Perhatian:</strong> proses menyiapkan label merotasi QR aktif. Label QR lama untuk aset yang dipilih tidak berlaku lagi.</p>
-      <p><strong>Catatan kepatuhan:</strong> QR DESATARA adalah elemen tambahan untuk akses digital dan bukan pengganti kode barang maupun nomor register resmi.</p>
+      <p><strong>Catatan kepatuhan:</strong> QR DESATARA adalah elemen tambahan untuk akses digital dan bukan pengganti kode barang maupun NUP resmi.</p>
       <p>Ukuran fisik label mengikuti kebutuhan media/printer desa; aplikasi tidak menetapkan ukuran stiker sebagai ketentuan regulasi.</p>
     </section>
 
@@ -42,7 +42,7 @@ onMounted(async () => {
           <strong class="tenant">{{ tenant.name }}</strong>
           <strong class="asset-name">{{ label.name }}</strong>
           <span>Kode barang: {{ label.item_code }}</span>
-          <span>No. register: {{ label.register_number }}</span>
+          <span>NUP: {{ label.nup }}</span>
           <small>QR DESATARA - akses digital tambahan</small>
         </div>
       </article>

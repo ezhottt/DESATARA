@@ -2215,3 +2215,8 @@ Fresh post-B26.2 evidence: PHPUnit **141 passed / 542 assertions**, Pint **188 f
 A compliance regression test now locks the corrected label contract: administrative item code + register number are primary; fixed sticker dimensions are not claimed as regulatory; QR remains an explicitly additional DESATARA element. Label preparation fails closed for records missing item code or register number.
 
 Focused correction evidence before final full-suite verification: **5 passed / 34 assertions**, Vite **PASS**, PHPStan **0 errors**.
+
+
+# 159. NUP SEMANTIC REGRESSION - 2026-10-05
+
+Regression coverage locks current NUP terminology in the asset form and physical label, the NUP CSV template header, and import compatibility with both current NUP headers and legacy register-number aliases. Storage/snapshot field names remain backward compatible.
