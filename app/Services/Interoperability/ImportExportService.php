@@ -12,6 +12,7 @@ use App\Models\ImportRow;
 use App\Models\IntegrationExport;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Assets\AssetIdentityService;
 use App\Support\Authorization\PermissionResolver;
 use App\Support\Tenancy\ActiveTenantMembership;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -21,7 +22,7 @@ use RuntimeException;
 
 final class ImportExportService
 {
-    public function __construct(private ActiveTenantMembership $memberships, private PermissionResolver $permissions) {}
+    public function __construct(private ActiveTenantMembership $memberships, private PermissionResolver $permissions, private AssetIdentityService $assetIdentity) {}
 
     /** @param list<array<string,mixed>> $rows */
     public function preview(Tenant $tenant, User $actor, array $rows, string $importType = 'assets', string $strategy = 'atomic'): ImportJob
@@ -66,7 +67,15 @@ final class ImportExportService
                 throw new RuntimeException('Atomic import contains invalid rows.');
             }
             foreach (ImportRow::query()->where('tenant_id', $tenant->id)->where('import_job_id', $job->id)->where('status', 'valid')->lockForUpdate()->get() as $row) {
-                $asset = Asset::query()->create([...$row->normalized_payload, 'tenant_id' => $tenant->id, 'created_by' => $actor->id, 'updated_by' => $actor->id]);
+                $payload = $row->normalized_payload;
+                if (
+                    blank($payload['register_number'] ?? null)
+                    && isset($payload['acquisition_date'], $payload['acquisition_year'])
+                    && (float) ($payload['quantity'] ?? 1) === 1.0
+                ) {
+                    $payload['register_number'] = $this->assetIdentity->nextNup($tenant, (int) $payload['classification_id'], (int) $payload['acquisition_year']);
+                }
+                $asset = Asset::query()->create([...$payload, 'tenant_id' => $tenant->id, 'created_by' => $actor->id, 'updated_by' => $actor->id]);
                 $row->update(['status' => 'imported', 'created_resource_type' => 'asset', 'created_resource_id' => $asset->id]);
             }
             $job->update(['status' => 'completed', 'imported_rows' => ImportRow::query()->where('import_job_id', $job->id)->where('status', 'imported')->count()]);
@@ -138,6 +147,26 @@ final class ImportExportService
         }
         if ($assetCode !== '' && collect($allRows)->filter(fn (array $row) => trim((string) ($row['asset_code'] ?? '')) === $assetCode)->count() > 1) {
             $e[] = ['field_name' => 'asset_code', 'error_code' => 'duplicate_in_file', 'message' => 'Kode aset duplikat di dalam file impor.'];
+        }
+        $nup = isset($p['register_number']) ? trim((string) $p['register_number']) : '';
+        $year = isset($p['acquisition_year']) ? (int) $p['acquisition_year'] : null;
+        $classificationId = isset($p['classification_id']) ? (int) $p['classification_id'] : null;
+        if ($nup !== '' && (! ctype_digit($nup) || (int) $nup < 1)) {
+            $e[] = ['field_name' => 'register_number', 'error_code' => 'invalid_nup', 'message' => 'NUP harus berupa nomor urut numerik mulai dari 001.'];
+        }
+        if ($nup !== '' && $year !== null && $classificationId !== null && Asset::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('classification_id', $classificationId)
+            ->where('acquisition_year', $year)
+            ->where('register_number', $nup)
+            ->exists()) {
+            $e[] = ['field_name' => 'register_number', 'error_code' => 'duplicate_nup', 'message' => 'NUP sudah digunakan pada desa, klasifikasi, dan tahun perolehan yang sama.'];
+        }
+        if ($nup !== '' && $year !== null && $classificationId !== null && collect($allRows)->filter(fn (array $row) => (int) ($row['classification_id'] ?? 0) === $classificationId
+            && (int) ($row['acquisition_year'] ?? 0) === $year
+            && trim((string) ($row['register_number'] ?? '')) === $nup
+        )->count() > 1) {
+            $e[] = ['field_name' => 'register_number', 'error_code' => 'duplicate_nup_in_file', 'message' => 'NUP duplikat pada desa, klasifikasi, dan tahun perolehan yang sama di dalam file impor.'];
         }
         if (array_key_exists('tenant_id', $p)) {
             $e[] = ['field_name' => 'tenant_id', 'error_code' => 'forbidden_field', 'message' => 'Tenant ownership comes from active context.'];

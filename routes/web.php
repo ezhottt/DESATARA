@@ -45,6 +45,7 @@ Route::get('/', function (Request $request) {
     return Inertia::render('Foundation', ['product' => 'DESATARA']);
 })->middleware('auth')->name('home');
 Route::get('/qr/{token}', [EvidenceController::class, 'publicQr'])->middleware('throttle:60,1')->name('qr.public');
+Route::get('/verifikasi-aset/{uuid}', [EvidenceController::class, 'publicAsset'])->middleware('throttle:60,1')->name('assets.verify');
 
 Route::middleware('auth')->group(function () {
     Route::post('/tenant/switch/{tenant:uuid}', TenantSwitchController::class)->name('tenant.switch');

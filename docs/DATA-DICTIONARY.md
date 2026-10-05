@@ -755,7 +755,7 @@ Both references use tenant-aware FK.
 | tenant_id | bigint | NO |
 | classification_id | bigint | NO |
 | asset_code | varchar(150) | YES |
-| register_number | varchar(150) | YES |
+| register_number | varchar(150) | YES | — storage compatibility untuk NUP; registrasi aset individual baru menerbitkan NUP otomatis
 | name | varchar(255) | NO |
 | description | text | YES |
 | acquisition_date | date | YES |
@@ -1293,7 +1293,7 @@ created_at
 updated_at
 ```
 
-Unique active/finalized determination policy per tenant/year must be enforced according to final business rule.
+Unique active/finalized determination policy per tenant/classification/year must be enforced according to final business rule.
 
 ---
 
@@ -2210,6 +2210,14 @@ Unique:
 ```
 
 Document/business numbering must not derive from `MAX()+1`.
+
+Untuk label/registrasi aset:
+- `sequence_type = asset_nup`;
+- `period_key = acquisition_year`;
+- scope allocation adalah tenant + klasifikasi barang + tahun perolehan;
+- row `numbering_sequences` dikunci dengan `FOR UPDATE` saat alokasi;
+- nilai numerik legacy pada tahun yang sama hanya dipakai untuk bootstrap `last_number`, kemudian sequence menjadi source of truth;
+- NUP yang telah diterbitkan tidak didaur ulang.
 
 Allocation occurs under transaction/locking.
 

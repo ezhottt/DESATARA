@@ -7,6 +7,7 @@ use App\Models\AssetLocation;
 use App\Models\FundingSource;
 use App\Models\Tenant;
 use App\Models\Unit;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use RuntimeException;
 use ZipArchive;
@@ -132,17 +133,26 @@ final class LegacyAssetFileReader
             $raw[$this->header((string) $header)] = $values[$index] ?? null;
         }
 
-        $classificationCode = $raw['kode_klasifikasi'] ?? $raw['klasifikasi'] ?? null;
+        $legacyClassificationCode = $raw['kode_klasifikasi'] ?? $raw['klasifikasi'] ?? null;
+        $classificationCode = $legacyClassificationCode ?? $raw['kode_barang'] ?? null;
+        $assetCode = $raw['kode_internal'] ?? $raw['kode_aset'] ?? ($legacyClassificationCode ? ($raw['kode_barang'] ?? null) : null);
         $unitCode = $raw['satuan'] ?? 'UNIT';
         $fundingCode = $raw['sumber_dana'] ?? null;
         $locationCode = $raw['lokasi'] ?? null;
+        $acquisitionDate = $this->date($raw['tanggal_perolehan'] ?? null);
+        $nup = $this->text($raw['nup'] ?? $raw['nomor_urut_pendaftaran'] ?? $raw['nomor_register'] ?? $raw['no_register'] ?? null);
+        if ($nup !== null && ctype_digit($nup)) {
+            $normalized = ltrim($nup, '0');
+            $nup = str_pad($normalized === '' ? '0' : $normalized, 3, '0', STR_PAD_LEFT);
+        }
 
         return array_filter([
             'name' => $this->text($raw['nama_barang'] ?? $raw['nama_aset'] ?? null),
-            'asset_code' => $this->text($raw['kode_barang'] ?? $raw['kode_aset'] ?? null),
-            'register_number' => $this->text($raw['nup'] ?? $raw['nomor_urut_pendaftaran'] ?? $raw['nomor_register'] ?? $raw['no_register'] ?? null),
+            'asset_code' => $this->text($assetCode),
+            'register_number' => $nup,
             'classification_id' => $classificationCode ? AssetClassification::query()->where('code', trim((string) $classificationCode))->where('status', 'active')->value('id') : null,
-            'acquisition_year' => $this->integer($raw['tahun_perolehan'] ?? null),
+            'acquisition_date' => $acquisitionDate,
+            'acquisition_year' => $acquisitionDate ? CarbonImmutable::parse($acquisitionDate)->year : $this->integer($raw['tahun_perolehan'] ?? null),
             'acquisition_origin' => $this->text($raw['asal_perolehan'] ?? null),
             'acquisition_value' => $this->money($raw['harga_perolehan'] ?? $raw['nilai_perolehan'] ?? null),
             'quantity' => $this->decimal($raw['jumlah'] ?? 1),
@@ -173,6 +183,26 @@ final class LegacyAssetFileReader
     private function integer(mixed $value): ?int
     {
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    private function date(mixed $value): ?string
+    {
+        $value = trim((string) ($value ?? ''));
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['Y-m-d', 'd-m-Y', 'd/m/Y'] as $format) {
+            try {
+                $date = CarbonImmutable::createFromFormat($format, $value);
+                if ($date !== null && $date->format($format) === $value) {
+                    return $date->format('Y-m-d');
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return null;
     }
 
     private function decimal(mixed $value): float

@@ -40,9 +40,6 @@ class B26ExcelImportTest extends TestCase
         $response = $this->actingAs($user)->withSession(['active_tenant_uuid' => $tenant->uuid])
             ->post('/imports/assets/preview', ['file' => UploadedFile::fake()->createWithContent('aset-desa.csv', $csv), 'strategy' => 'atomic']);
 
-        if (ImportJob::query()->count() === 0) {
-            dump(['status' => $response->status(), 'body' => $response->getContent()]);
-        }
         $response->assertSessionHasNoErrors();
         $job = ImportJob::query()->firstOrFail();
         $response->assertRedirect('/imports/'.$job->uuid);

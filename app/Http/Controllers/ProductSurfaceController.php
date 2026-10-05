@@ -11,7 +11,6 @@ use App\Models\AssetLocation;
 use App\Models\AssetMaintenance;
 use App\Models\AssetMutation;
 use App\Models\AssetPhoto;
-use App\Models\AssetQrToken;
 use App\Models\AssetReport;
 use App\Models\AssetSafeguard;
 use App\Models\AssetTransfer;
@@ -35,6 +34,7 @@ use App\Models\TenantMembership;
 use App\Models\TenantSetting;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\Assets\AssetIdentityService;
 use App\Services\Evidence\DocumentService;
 use App\Services\Evidence\QrTokenService;
 use App\Services\Interoperability\ImportExportService;
@@ -47,9 +47,11 @@ use App\Services\Workflow\WorkflowApprovalEngine;
 use App\Support\Authorization\PermissionResolver;
 use App\Support\Authorization\RoleAssignment;
 use App\Support\Tenancy\TenantContext;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -65,29 +67,56 @@ final class ProductSurfaceController extends Controller
         return Inertia::render('Surface/Index', ['surface' => 'assets', 'title' => 'Aset', 'description' => 'Daftar aset tenant aktif.', 'items' => $items, 'filters' => ['q' => $q], 'createUrl' => route('assets.create')]);
     }
 
-    public function prepareAssetLabels(Request $request, TenantContext $context, QrTokenService $qr): Response
+    public function prepareAssetLabels(Request $request, TenantContext $context, AssetIdentityService $identity): Response
     {
-        $data = $request->validate(['asset_uuids' => ['required', 'array', 'min:1', 'max:100'], 'asset_uuids.*' => ['required', 'uuid', 'distinct']]);
-        $assets = Asset::query()->where('tenant_id', $context->id())->with('classification')->whereIn('uuid', $data['asset_uuids'])->get();
-        abort_unless($assets->count() === count($data['asset_uuids']), 422);
-        abort_if($assets->contains(fn (Asset $asset) => blank($asset->classification?->code) || blank($asset->register_number)), 422, 'Label hanya dapat dicetak untuk aset yang sudah memiliki kode barang dan NUP.');
+        $data = $request->validate([
+            'asset_uuids' => ['required_without:filter_q', 'array', 'min:1', 'max:100'],
+            'asset_uuids.*' => ['required', 'uuid', 'distinct'],
+            'filter_q' => ['required_without:asset_uuids', 'nullable', 'string', 'max:100'],
+        ]);
 
-        $labels = DB::transaction(fn () => $assets->map(function (Asset $asset) use ($context, $qr, $request): array {
-            $active = AssetQrToken::query()->where('tenant_id', $context->id())->where('asset_id', $asset->id)->where('status', 'active')->lockForUpdate()->first();
-            [$raw] = $active
-                ? $qr->rotate($context->tenant(), $request->user(), $asset, $active)
-                : $qr->issue($context->tenant(), $request->user(), $asset);
+        if (isset($data['filter_q'])) {
+            $q = trim((string) $data['filter_q']);
+            if ($q === '') {
+                throw ValidationException::withMessages(['filter_q' => 'Filter pencarian aset harus diisi.']);
+            }
 
-            return [
-                'uuid' => $asset->uuid,
-                'name' => $asset->name,
-                'item_code' => $asset->classification?->code,
-                'nup' => $asset->nup,
-                'qr_url' => route('qr.public', ['token' => $raw]),
+            $assets = Asset::query()
+                ->where('tenant_id', $context->id())
+                ->with('classification')
+                ->where(fn ($query) => $query
+                    ->where('name', 'like', "%{$q}%")
+                    ->orWhere('asset_code', 'like', "%{$q}%")
+                    ->orWhere('register_number', 'like', "%{$q}%"))
+                ->orderBy('id')
+                ->limit(101)
+                ->get();
+
+            if ($assets->count() > 100) {
+                throw ValidationException::withMessages(['filter_q' => 'Hasil filter melebihi 100 aset. Persempit filter sebelum mencetak label.']);
+            }
+            if ($assets->isEmpty()) {
+                throw ValidationException::withMessages(['filter_q' => 'Tidak ada aset yang cocok dengan filter.']);
+            }
+        } else {
+            $assets = Asset::query()
+                ->where('tenant_id', $context->id())
+                ->with('classification')
+                ->whereIn('uuid', $data['asset_uuids'])
+                ->get();
+            abort_unless($assets->count() === count($data['asset_uuids']), 422);
+        }
+
+        $labels = $assets->map(function (Asset $asset) use ($context, $identity): array {
+            return $identity->labelPayload($context->tenant(), $asset) + [
+                'qr_url' => route('assets.verify', ['uuid' => $asset->uuid]),
             ];
-        })->values());
+        })->values();
 
-        return Inertia::render('Assets/Labels', ['labels' => $labels, 'tenant' => $context->tenant()->only(['uuid', 'name'])]);
+        return Inertia::render('Assets/Labels', [
+            'labels' => $labels,
+            'tenant' => $context->tenant()->only(['uuid', 'name', 'village_code']),
+        ]);
     }
 
     public function createAsset(TenantContext $context): Response
@@ -95,10 +124,24 @@ final class ProductSurfaceController extends Controller
         return Inertia::render('Assets/Form', ['asset' => null, 'classifications' => AssetClassification::query()->where('status', 'active')->orderBy('code')->get(['id', 'code', 'name']), 'locations' => AssetLocation::query()->where('tenant_id', $context->id())->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name']), 'units' => Unit::query()->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name']), 'fundingSources' => FundingSource::query()->where(fn ($q) => $q->whereNull('tenant_id')->orWhere('tenant_id', $context->id()))->where('status', 'active')->get(['id', 'code', 'name'])]);
     }
 
-    public function storeAsset(Request $request, TenantContext $context): RedirectResponse
+    public function storeAsset(Request $request, TenantContext $context, AssetIdentityService $identity): RedirectResponse
     {
-        $data = $request->validate(['classification_id' => 'required|integer', 'asset_code' => 'nullable|string|max:150', 'register_number' => 'nullable|string|max:150', 'name' => 'required|string|max:255', 'quantity' => 'required|numeric|gt:0', 'unit_id' => 'required|integer', 'condition' => 'required|string|max:50', 'acquisition_value' => 'nullable|numeric|min:0', 'current_location_id' => 'nullable|integer', 'current_responsible_party_id' => 'nullable|integer', 'description' => 'nullable|string']);
-        abort_unless(AssetClassification::query()->whereKey($data['classification_id'])->where('status', 'active')->exists(), 422);
+        $data = $request->validate([
+            'classification_id' => 'required|integer',
+            'asset_code' => 'nullable|string|max:150',
+            'name' => 'required|string|max:255',
+            'acquisition_date' => 'required|date',
+            'quantity' => 'required|numeric|in:1',
+            'unit_id' => 'required|integer',
+            'condition' => 'required|string|max:50',
+            'acquisition_value' => 'nullable|numeric|min:0',
+            'current_location_id' => 'nullable|integer',
+            'current_responsible_party_id' => 'nullable|integer',
+            'description' => 'nullable|string',
+        ]);
+
+        $classification = AssetClassification::query()->whereKey($data['classification_id'])->where('status', 'active')->first();
+        abort_unless($classification !== null, 422);
         abort_unless(Unit::query()->whereKey($data['unit_id'])->where('status', 'active')->exists(), 422);
         if (isset($data['current_location_id'])) {
             abort_unless(AssetLocation::query()->where('tenant_id', $context->id())->whereKey($data['current_location_id'])->exists(), 422);
@@ -106,9 +149,23 @@ final class ProductSurfaceController extends Controller
         if (isset($data['current_responsible_party_id'])) {
             abort_unless(ResponsibleParty::query()->where('tenant_id', $context->id())->whereKey($data['current_responsible_party_id'])->exists(), 422);
         }
-        $asset = Asset::query()->create($data + ['tenant_id' => $context->id(), 'created_by' => $request->user()->id, 'updated_by' => $request->user()->id, 'lifecycle_status' => 'draft', 'verification_status' => 'unverified']);
 
-        return redirect()->route('assets.show', $asset->uuid)->with('success', 'Aset berhasil diregistrasikan.');
+        $year = CarbonImmutable::parse($data['acquisition_date'])->year;
+        $asset = DB::transaction(function () use ($data, $context, $identity, $year, $request): Asset {
+            $nup = $identity->nextNup($context->tenant(), (int) $data['classification_id'], $year);
+
+            return Asset::query()->create($data + [
+                'tenant_id' => $context->id(),
+                'register_number' => $nup,
+                'acquisition_year' => $year,
+                'created_by' => $request->user()->id,
+                'updated_by' => $request->user()->id,
+                'lifecycle_status' => 'draft',
+                'verification_status' => 'unverified',
+            ]);
+        });
+
+        return redirect()->route('assets.show', $asset->uuid)->with('success', 'Aset berhasil diregistrasikan dengan NUP '.$asset->register_number.'.');
     }
 
     public function showAsset(Request $request, string $uuid, TenantContext $context, PermissionResolver $permissions): Response
@@ -436,7 +493,7 @@ final class ProductSurfaceController extends Controller
     {
         return response()->streamDownload(function (): void {
             $stream = fopen('php://output', 'wb');
-            fputcsv($stream, ['Nama Barang', 'Kode Barang', 'NUP', 'Kode Klasifikasi', 'Tahun Perolehan', 'Asal Perolehan', 'Harga Perolehan', 'Jumlah', 'Satuan', 'Sumber Dana', 'Lokasi', 'Kondisi']);
+            fputcsv($stream, ['Nama Barang', 'Kode Barang', 'NUP', 'Tanggal Perolehan', 'Tahun Perolehan', 'Kode Internal', 'Asal Perolehan', 'Harga Perolehan', 'Jumlah', 'Satuan', 'Sumber Dana', 'Lokasi', 'Kondisi']);
             fputcsv($stream, ['Contoh Laptop', 'AST-001', '0001', 'ELEKTRONIK', '2026', 'Pembelian', '12500000', '1', 'UNIT', 'APBDES', 'KANTOR', 'Baik']);
             fclose($stream);
         }, 'template-impor-aset-desatara.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);

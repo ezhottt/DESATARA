@@ -496,7 +496,7 @@ Search targets:
 
 - nama aset;
 - kode aset;
-- nomor register;
+- NUP;
 - identifiers yang memang searchable.
 
 Search:
@@ -649,7 +649,7 @@ Example:
 Laptop ASUS ExpertBook
 
 Kode: 02.03.01.001
-Register: 00012
+NUP: 012
 
 [Baik] [Aktif] [Terverifikasi]
 

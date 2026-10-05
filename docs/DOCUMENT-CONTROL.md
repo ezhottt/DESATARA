@@ -75,3 +75,24 @@ Artifact berikut dibuat ketika lifecycle membutuhkannya: `BACKUP-RESTORE.md`, `C
 ### B26.1 UI hardening checkpoint
 
 B26.1 is a non-contract-changing product-surface hardening on PR #3. It corrects Vue template surface selection, human-readable localization, and tracked UI source encoding without changing regulatory, tenancy, workflow, or historical-integrity invariants. Fresh local gate: **137 tests / 514 assertions**, Pint **186 files**, PHPStan **0 errors**, Vite **PASS**.
+
+
+### B26.2 final asset-label identity checkpoint - 2026-10-05
+
+The earlier B26.2 label implementation and subsequent NUP terminology correction are superseded by the final inventory-identity contract documented in `IMPLEMENTATION_PLAN.md #95`.
+
+Final contract highlights:
+- inventory code = tenant village code / master item code / acquisition year / NUP;
+- NUP generated with existing `numbering_sequences`, scoped by tenant + acquisition year;
+- stable public UUID QR verification;
+- single, selected bulk, and filtered bulk preview/print;
+- Small/Medium/Large operational presets;
+- DB uniqueness and identity immutability migration;
+- current + legacy import compatibility.
+
+Production deployment remains outside this checkpoint.
+
+
+### B26.2 Label Aset Desa final checkpoint - 2026-10-05
+
+Status: implementation and local verification GREEN. Identity composition is tenant village code + classification master code + acquisition year + NUP. NUP allocation is race-safe and scoped by tenant/classification/year. Label preview supports single, selected bulk, and current search-filter bulk printing with Small/Medium/Large operational presets and copy count. Public UUID verification is allowlisted. Legacy import compatibility is preserved. Production deployment and PR merge remain outside this checkpoint.

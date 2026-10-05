@@ -2220,3 +2220,63 @@ Focused correction evidence before final full-suite verification: **5 passed / 3
 # 159. NUP SEMANTIC REGRESSION - 2026-10-05
 
 Regression coverage locks current NUP terminology in the asset form and physical label, the NUP CSV template header, and import compatibility with both current NUP headers and legacy register-number aliases. Storage/snapshot field names remain backward compatible.
+
+
+# 160. B26.2 FINAL LABEL / IDENTITY VERIFICATION - 2026-10-05
+
+Targeted verification after the final identity implementation:
+
+- **35 tests / 186 assertions PASS** across label identity, preview/print, stable QR, authorization, tenant isolation, NUP allocation, real process concurrency, validation, filter printing, current/legacy import, and B14/B26 interoperability.
+- Real race test: Laravel process concurrency produced distinct `001` and `002` allocations for simultaneous requests in the same tenant/classification/year.
+- Migration safety on `desatara_test`: fresh migration PASS, latest rollback PASS, reapply PASS.
+- PHPStan checkpoint after implementation: **0 errors**.
+
+Full application suite after implementation:
+- **165 tests / 663 assertions PASS**.
+
+Coverage added or strengthened includes:
+1. composite inventory identity from tenant/master/date/NUP;
+2. tenant/classification/year NUP isolation;
+3. zero-padding and monotonic non-reuse;
+4. database duplicate rejection;
+5. issued identity immutability;
+6. actual concurrent NUP generation;
+7. acquisition year derivation from acquisition date;
+8. prevention of client-supplied NUP during interactive registration;
+9. quantity-1 physical asset registration;
+10. required label-field validation;
+11. stable public UUID QR;
+12. public verification allowlist / sensitive-field omission;
+13. unauthorized label preparation;
+14. cross-tenant selected bulk rejection;
+15. tenant-scoped filtered print;
+16. current CSV master-code/date/NUP semantics;
+17. legacy import aliases;
+18. Small/Medium/Large physical presets and copy count;
+19. long-name/inventory-code wrapping contract;
+20. Small QR quiet-zone contract;
+21. print `break-inside` contract and shell-free preview.
+
+Final formatter/static/frontend/diff gates are recorded after the final documentation sync.
+
+
+# 160. B26.2 LABEL ASET DESA - FINAL ACCEPTANCE EVIDENCE - 2026-10-05
+
+Final acceptance verification after repository audit and compatibility corrections:
+
+- targeted label/identity/import/privacy/filter suite: **27 passed / 149 assertions**;
+- real PostgreSQL process-concurrency NUP test: **1 passed / 2 assertions**, producing distinct allocations in the same tenant + classification + acquisition-year scope;
+- legacy B14/B26 interoperability compatibility suite plus current identity import: **9 passed / 55 assertions**;
+- full project suite: **167 passed / 675 assertions**;
+- Pint: **200 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- git diff check: **PASS**;
+- runtime source hygiene scan: **PASS**.
+
+Migration verification used the isolated `desatara_test` database:
+1. `migrate:fresh --env=testing --force` PASS;
+2. rollback of `2026_10_05_120000_harden_asset_registration_identity` PASS;
+3. forward migrate of the same migration PASS.
+
+The final NUP scope is tenant + classification + acquisition year. Generic/legacy interoperability remains backward compatible with incomplete or aggregate historical records; those records do not receive automatic label identity and are rejected by label validation until reconciled into an individual quantity-1 asset with complete identity.

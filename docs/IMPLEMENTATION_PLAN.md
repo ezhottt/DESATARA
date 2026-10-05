@@ -2362,3 +2362,225 @@ Compatibility decision:
 - label printing continues to fail closed when kode barang or NUP is missing.
 
 This is a semantic compatibility migration, not a destructive data rewrite.
+
+
+# 95. B26.2 FINAL - LABEL ASET DESA & INVENTORY IDENTITY
+
+**Status:** IMPLEMENTED LOCALLY / FULL TEST SUITE GREEN / FINAL STATIC GATE PENDING
+
+## Audit findings that drove the implementation
+
+- DESATARA already uses Laravel 13, Inertia.js, Vue 3, Tailwind CSS, PostgreSQL, tenant context middleware, RBAC, asset UUIDs, master classifications, and the `qrcode` frontend dependency.
+- `tenants.village_code` is the existing tenant-owned code field. The application does not hardcode a village code. Label generation fails closed when it is empty.
+- Official item codes come from `asset_classifications.code`; operators do not type a replacement classification code.
+- `assets.register_number` is retained as the physical storage column for backward compatibility. The current domain/UI terminology is NUP.
+- `numbering_sequences` already existed and was unused. B26.2 uses it instead of adding a parallel numbering table.
+- Assets support historical reclassification. Because an issued NUP must remain immutable, a classification-scoped NUP could collide after reclassification. The final NUP namespace is therefore **tenant + acquisition year**, not tenant + classification + year.
+- Existing legacy/import data may represent aggregate quantity. Interactive registration now uses one record per physical unit, while legacy aggregate records remain compatible but cannot print a physical label until normalized.
+
+## Final inventory identity
+
+```text
+[KODE WILAYAH DESA] / [KODE BARANG] / [TAHUN PEROLEHAN] / [NUP]
+```
+
+Sources:
+- village code: `tenant.village_code`;
+- item code: `asset.classification.code`;
+- acquisition year: derived from `asset.acquisition_date` and checked against stored `acquisition_year`;
+- NUP: `assets.register_number`, allocated by `AssetIdentityService`.
+
+Example structure only:
+
+```text
+32.03.26.2007 / 1.3.2.10.01.02.003 / 2026 / 003
+```
+
+No real village/classification code is hardcoded in application code.
+
+## NUP allocation rule
+
+- scope: tenant + acquisition year;
+- minimum display width: three digits (`001`, `002`, ...);
+- allocation state: existing `numbering_sequences` table;
+- `sequence_type = asset_nup`;
+- `period_key = acquisition_year`;
+- allocation uses transaction + row `FOR UPDATE` lock;
+- existing numeric NUPs in that tenant/classification/year are used only to bootstrap the sequence safely;
+- allocated numbers are monotonic and are not recycled;
+- database partial unique index prevents duplicate `tenant_id + acquisition_year + register_number`;
+- issued NUP, acquisition date, and acquisition year are database-immutable;
+- the migration refuses to apply when legacy duplicates already exist in the new uniqueness scope.
+
+A real Laravel process-concurrency regression test runs two child processes against the same tenant/classification/year and proves they receive different NUPs.
+
+## Registration contract
+
+Interactive asset registration:
+- requires an active master classification;
+- requires acquisition date;
+- derives acquisition year server-side;
+- ignores client attempts to submit a manual NUP;
+- generates NUP server-side;
+- requires quantity exactly 1 so one physical asset record maps to one physical label;
+- keeps `asset_code` only as an optional internal identifier, not as the official item classification.
+
+The asset form now provides searchable master classification selection by code/name and does not expose an editable NUP field.
+
+## Label preparation and validation
+
+Label generation fails closed unless all of the following are valid:
+- tenant exists in active tenant context;
+- tenant has `village_code`;
+- asset belongs to the active tenant;
+- asset has a master classification code;
+- asset has a non-empty name;
+- asset has acquisition date;
+- stored acquisition year agrees with the acquisition date;
+- asset has an issued NUP;
+- asset quantity is exactly 1.
+
+Specific validation messages identify the missing/inconsistent field.
+
+## Print UX
+
+Single:
+```text
+Detail Aset -> Cetak Label -> Preview -> Pilih Ukuran -> Pilih Salinan -> Cetak
+```
+
+Bulk:
+- checkbox selection in asset register;
+- maximum 100 explicit asset UUIDs per request;
+- every asset is resolved again server-side inside the active tenant.
+
+Filter print:
+- available when a search filter is active;
+- server re-runs the filter inside the active tenant;
+- capped at 100 results;
+- frontend IDs are not trusted as the source of filtered results.
+
+Operational print presets:
+- Small: 50 x 25 mm;
+- Medium: 70 x 35 mm (default);
+- Large: 100 x 50 mm.
+
+These are application/media presets, not represented as regulatory sticker dimensions.
+
+The preview and printed result use the same Vue label markup. CSS uses physical `mm` units, `break-inside: avoid`, explicit wrapping for long inventory codes, high-contrast black/white output, and no dashboard shell on the print page.
+
+## Stable QR verification
+
+Physical labels use the stable asset UUID through:
+
+```text
+GET /verifikasi-aset/{uuid}
+route name: assets.verify
+```
+
+This avoids exposing numeric database IDs and avoids rotating opaque evidence tokens every time a print preview is opened.
+
+Public verification is allowlisted to:
+- asset name;
+- inventory code;
+- acquisition year;
+- lifecycle status;
+- owner village name.
+
+It does not return acquisition value, documents, user data, audit logs, credentials, or internal tenant configuration.
+
+The older opaque-token QR contract remains available for its existing evidence workflow and is not removed by B26.2.
+
+## Import compatibility
+
+Current CSV/XLSX contract:
+- `Kode Barang` = master classification code;
+- `Kode Internal` = optional internal asset code;
+- `NUP` = optional for migration;
+- `Tanggal Perolehan` is normalized and drives acquisition year;
+- an individual quantity-1 row with date/year and no NUP gets a server-generated NUP at commit.
+
+Legacy compatibility remains:
+- `Kode Klasifikasi` / `Klasifikasi` continue to resolve the classification;
+- legacy `Kode Barang` can continue to map to internal asset code when a separate legacy classification column is present;
+- `Nomor Register` / `No Register` remain accepted aliases for NUP.
+
+Duplicate NUPs in the same tenant/classification/year are rejected during import preview.
+
+## Database migration
+
+New migration:
+
+`2026_10_05_120000_harden_asset_registration_identity.php`
+
+It:
+1. fails closed if duplicate NUPs already exist inside tenant/classification/year scope;
+2. creates `assets_nup_scope_unique`;
+3. creates an identity immutability trigger for issued NUP/acquisition date/acquisition year.
+
+Rollback removes the trigger/function/index.
+
+Testing database evidence:
+- migrate:fresh: PASS;
+- rollback latest migration: PASS;
+- reapply migration: PASS.
+
+## Authorization
+
+Label preparation continues to require:
+- authenticated user;
+- active tenant membership/context;
+- `documents.manage`;
+- operational tenant.
+
+Cross-tenant selected UUIDs are rejected. Filter printing is tenant-scoped server-side. A member without `documents.manage` receives 403.
+
+## Files / modules materially changed
+
+Backend:
+- `app/Models/NumberingSequence.php`
+- `app/Services/Assets/AssetIdentityService.php`
+- `app/Http/Controllers/ProductSurfaceController.php`
+- `app/Http/Controllers/EvidenceController.php`
+- `app/Services/Interoperability/LegacyAssetFileReader.php`
+- `app/Services/Interoperability/ImportExportService.php`
+- `routes/web.php`
+- identity-hardening migration
+
+Frontend:
+- `resources/js/Pages/Assets/Form.vue`
+- `resources/js/Pages/Assets/Labels.vue`
+- `resources/js/Pages/Surface/Index.vue`
+
+Demo/test/docs were updated to match the final NUP contract.
+
+No new npm/composer dependency was added in this final hardening; the existing `qrcode` dependency is reused.
+
+## Known limitations / explicit non-claims
+
+- `tenant.village_code` is the current database source. B26.2 does not independently certify that every deployed tenant has been populated with an official government code; production onboarding must provide the correct code. Demo uses a non-official demo value.
+- The classification schema has code/name but no dedicated alias table/field, so classification search currently covers code and name only.
+- Physical camera/printer scanning of the 15 mm Small QR is not hardware-tested here. Automated contracts verify QR generation, quiet-zone margin, and physical CSS sizing.
+- DESATARA currently has no asset SoftDeletes contract. B26.2 therefore guarantees non-reuse through monotonic numbering rather than implementing a new soft-delete subsystem.
+- Issued NUP/date/year corrections are intentionally blocked at database level. A future controlled administrative correction workflow would require explicit permission, reason, audit, and dedicated domain design; B26.2 does not silently add one.
+- Aggregate legacy records remain supported for history/import, but cannot receive physical labels until represented as individual quantity-1 records.
+
+
+## B26.2 Final repository audit notes
+
+Evidence from the actual DESATARA codebase before closing the label feature:
+
+- tenants.village_code already exists and is the tenant-owned source used as the village/region code in the printed identity; no global/static village code is introduced.
+- asset_classifications.code is the authoritative item/classification code. The asset form searches the existing classification master by code/name and stores the selected reference.
+- assets.register_number remains the physical storage field for backward compatibility; current domain/UI terminology is NUP/Register.
+- numbering_sequences already exists in the B08 master-data schema. B26.2 reuses it with row locking; no new numbering table is created.
+- NUP allocation scope is tenant + classification + acquisition year. The period key is classification/year and allocation is zero-padded to at least three digits.
+- acquisition year is derived from acquisition_date, never from current/print time.
+- interactive registration is one physical unit per asset record. Legacy/generic import remains backward compatible with aggregate historical rows; those rows do not receive an automatic NUP and cannot print physical labels until reconciled into individual quantity-1 records.
+- label print authorization reuses documents.manage and active tenant context; bulk/filter asset resolution is repeated server-side.
+- the existing qrcode frontend dependency is reused. The label QR targets stable public asset UUID verification and the public response is allowlisted.
+- DESATARA assets do not use SoftDeletes; hard deletion of referenced assets is already restricted by FK history. Sequence allocation never decrements/reuses issued numbers.
+- preview and print use the same Assets/Labels.vue markup with Small 50x25 mm, Medium 70x35 mm default, and Large 100x50 mm operational presets.
+- no generic bulk-action framework existed beyond the asset-list selection introduced for B26.2, so the existing asset selection path is reused instead of adding a parallel framework.
+
+Compatibility note: preset physical sizes are product/printing presets from the approved feature specification, not represented as statutory sticker dimensions.
