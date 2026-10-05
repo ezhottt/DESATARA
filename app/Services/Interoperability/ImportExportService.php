@@ -26,7 +26,7 @@ final class ImportExportService
     /** @param list<array<string,mixed>> $rows */
     public function preview(Tenant $tenant, User $actor, array $rows, string $importType = 'assets', string $strategy = 'atomic'): ImportJob
     {
-        $this->authorize($tenant, $actor, 'assets.create');
+        $this->authorizeAny($tenant, $actor, ['imports.create', 'assets.create']);
         if ($importType !== 'assets' || ! in_array($strategy, ['atomic', 'partial'], true)) {
             throw new RuntimeException('Unsupported import contract.');
         }
@@ -36,7 +36,7 @@ final class ImportExportService
             $valid = 0;
             foreach ($rows as $i => $payload) {
                 $row = ImportRow::query()->create(['tenant_id' => $tenant->id, 'import_job_id' => $job->id, 'row_number' => $i + 1, 'raw_payload' => $payload, 'status' => 'valid']);
-                foreach ($this->errors($payload) as $error) {
+                foreach ($this->errors($tenant, $payload, $rows) as $error) {
                     $row->update(['status' => 'invalid']);
                     ImportError::query()->create(['tenant_id' => $tenant->id, 'import_job_id' => $job->id, 'import_row_id' => $row->id, ...$error]);
                 }
@@ -52,7 +52,7 @@ final class ImportExportService
 
     public function confirm(Tenant $tenant, User $actor, ImportJob $job): ImportJob
     {
-        $this->authorize($tenant, $actor, 'assets.create');
+        $this->authorizeAny($tenant, $actor, ['imports.commit', 'assets.create']);
 
         return DB::transaction(function () use ($tenant, $actor, $job): ImportJob {
             $job = ImportJob::query()->where('tenant_id', $tenant->id)->whereKey($job->id)->lockForUpdate()->firstOrFail();
@@ -124,9 +124,21 @@ final class ImportExportService
      * @param  array<string, mixed>  $p
      * @return list<array{field_name: string, error_code: string, message: string}>
      */
-    private function errors(array $p): array
+    /**
+     * @param  array<string, mixed>  $p
+     * @param  list<array<string, mixed>>  $allRows
+     * @return list<array{field_name: string, error_code: string, message: string}>
+     */
+    private function errors(Tenant $tenant, array $p, array $allRows): array
     {
         $e = [];
+        $assetCode = isset($p['asset_code']) ? trim((string) $p['asset_code']) : '';
+        if ($assetCode !== '' && Asset::query()->where('tenant_id', $tenant->id)->where('asset_code', $assetCode)->exists()) {
+            $e[] = ['field_name' => 'asset_code', 'error_code' => 'duplicate_asset_code', 'message' => 'Kode aset sudah digunakan pada desa aktif.'];
+        }
+        if ($assetCode !== '' && collect($allRows)->filter(fn (array $row) => trim((string) ($row['asset_code'] ?? '')) === $assetCode)->count() > 1) {
+            $e[] = ['field_name' => 'asset_code', 'error_code' => 'duplicate_in_file', 'message' => 'Kode aset duplikat di dalam file impor.'];
+        }
         if (array_key_exists('tenant_id', $p)) {
             $e[] = ['field_name' => 'tenant_id', 'error_code' => 'forbidden_field', 'message' => 'Tenant ownership comes from active context.'];
         } if (! isset($p['name']) || ! is_string($p['name']) || trim($p['name']) === '') {
@@ -146,7 +158,22 @@ final class ImportExportService
      */
     private function normalize(array $p): array
     {
-        return array_intersect_key($p, array_flip(['uuid', 'classification_id', 'asset_code', 'register_number', 'name', 'description', 'acquisition_date', 'acquisition_year', 'acquisition_origin', 'funding_source_id', 'quantity', 'unit_id', 'unit_price', 'acquisition_value', 'condition', 'lifecycle_status', 'verification_status']));
+        return array_intersect_key($p, array_flip(['uuid', 'classification_id', 'asset_code', 'register_number', 'name', 'description', 'acquisition_date', 'acquisition_year', 'acquisition_origin', 'funding_source_id', 'quantity', 'unit_id', 'unit_price', 'acquisition_value', 'condition', 'lifecycle_status', 'verification_status', 'current_location_id']));
+    }
+
+    /** @param list<string> $permissions */
+    private function authorizeAny(Tenant $tenant, User $actor, array $permissions): void
+    {
+        if (! $tenant->isOperational() || ! $this->memberships->exists($actor->id, $tenant->id)) {
+            throw new AuthorizationException('Tenant permission is required.');
+        }
+        foreach ($permissions as $permission) {
+            if ($this->permissions->allows($actor, $tenant, $permission)) {
+                return;
+            }
+        }
+
+        throw new AuthorizationException('Tenant permission is required.');
     }
 
     private function authorize(Tenant $tenant, User $actor, string $permission): void

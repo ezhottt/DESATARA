@@ -15,6 +15,14 @@ class AuthenticationTest extends TestCase
         $this->get('/login')->assertOk()->assertInertia(fn ($page) => $page->component('Auth/Login'));
     }
 
+    public function test_authenticated_user_without_active_tenant_is_sent_to_tenant_foundation_from_login(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/login')->assertRedirect('/');
+        $this->actingAs($user)->get('/')->assertOk();
+    }
+
     public function test_user_can_authenticate_and_session_rotates(): void
     {
         $user = User::factory()->create(['password' => bcrypt('secret-password')]);

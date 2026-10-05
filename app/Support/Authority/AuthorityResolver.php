@@ -23,6 +23,6 @@ final class AuthorityResolver
 
     public function allows(User $user, Tenant $tenant, string $code, string $scope): bool
     {
-        return $this->resolve($user,$tenant,$code,$scope) !== null;
+        return $this->resolve($user, $tenant, $code, $scope) !== null;
     }
 }

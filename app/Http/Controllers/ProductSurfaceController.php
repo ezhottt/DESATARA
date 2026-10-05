@@ -37,6 +37,7 @@ use App\Models\User;
 use App\Services\Evidence\DocumentService;
 use App\Services\Evidence\QrTokenService;
 use App\Services\Interoperability\ImportExportService;
+use App\Services\Interoperability\LegacyAssetFileReader;
 use App\Services\Inventory\InventoryService;
 use App\Services\Inventory\ManageInventory;
 use App\Services\Lifecycle\ManageAssetLifecycleOperations;
@@ -50,6 +51,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ProductSurfaceController extends Controller
 {
@@ -88,7 +91,7 @@ final class ProductSurfaceController extends Controller
 
         $subjectType = DB::table('subject_types')->where('code', 'asset')->value('id');
         $documents = DB::table('document_links')->join('documents', 'documents.id', '=', 'document_links.document_id')->where('document_links.tenant_id', $context->id())->where('document_links.subject_type_id', $subjectType)->where('document_links.subject_id', $asset->id)->get(['documents.uuid', 'documents.document_type', 'documents.original_filename', 'documents.mime_type', 'documents.size_bytes', 'documents.created_at']);
-        $timeline = collect()->merge($asset->conditionEvents->map(fn ($e) => ['type' => 'Kondisi berubah', 'at' => $e->effective_at, 'detail' => $e->previous_condition.' → '.$e->new_condition]))->merge($asset->lifecycleEvents->map(fn ($e) => ['type' => 'Lifecycle berubah', 'at' => $e->effective_at, 'detail' => $e->from_status.' → '.$e->to_status]))->merge($asset->mutations->map(fn ($e) => ['type' => 'Mutasi', 'at' => $e->effective_at, 'detail' => 'Lokasi '.$e->origin_location_id.' → '.$e->destination_location_id]))->sortByDesc('at')->values();
+        $timeline = collect()->merge($asset->conditionEvents->map(fn ($e) => ['type' => 'Kondisi berubah', 'at' => $e->effective_at, 'detail' => $e->previous_condition.' ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ '.$e->new_condition]))->merge($asset->lifecycleEvents->map(fn ($e) => ['type' => 'Lifecycle berubah', 'at' => $e->effective_at, 'detail' => $e->from_status.' ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ '.$e->to_status]))->merge($asset->mutations->map(fn ($e) => ['type' => 'Mutasi', 'at' => $e->effective_at, 'detail' => 'Lokasi '.$e->origin_location_id.' ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ '.$e->destination_location_id]))->sortByDesc('at')->values();
 
         return Inertia::render('Assets/Show', ['asset' => $asset, 'documents' => $documents, 'timeline' => $timeline, 'canUpdate' => $permissions->allows($request->user(), $context->tenant(), 'assets.update')]);
     }
@@ -299,7 +302,7 @@ final class ProductSurfaceController extends Controller
         $models = ['maintenance' => AssetMaintenance::class, 'mutations' => AssetMutation::class, 'utilization' => AssetUtilization::class, 'safeguarding' => AssetSafeguard::class, 'valuation' => AssetValuation::class, 'transfers' => AssetTransfer::class, 'disposals' => AssetDisposal::class, 'usage' => AssetUsageDetermination::class];
         abort_unless(isset($models[$type]), 404);
 
-        return Inertia::render('Surface/Index', ['surface' => 'lifecycle', 'kind' => $type, 'title' => ucfirst($type), 'description' => 'Operasi dijalankan melalui service domain dan explicit transition.', 'items' => $models[$type]::query()->where('tenant_id', $context->id())->latest('id')->paginate(25), 'assets' => Asset::query()->where('tenant_id', $context->id())->orderBy('name')->get(['id', 'uuid', 'name', 'asset_code'])]);
+        return Inertia::render('Surface/Index', ['surface' => 'lifecycle', 'kind' => $type, 'title' => ucfirst($type), 'description' => 'Operasi dijalankan melalui service domain dan explicit transition.', 'items' => $models[$type]::query()->where('tenant_id', $context->id())->latest('id')->paginate(25), 'assets' => Asset::query()->where('tenant_id', $context->id())->orderBy('name')->get(['id', 'uuid', 'name', 'asset_code']), 'locations' => AssetLocation::query()->where('tenant_id', $context->id())->where('status', 'active')->orderBy('name')->get(['id', 'code', 'name'])]);
     }
 
     public function approvals(TenantContext $context): Response
@@ -362,6 +365,55 @@ final class ProductSurfaceController extends Controller
         $document = $reporting->export($context->tenant(), request()->user(), $report);
 
         return redirect()->route('documents.download', $document->uuid);
+    }
+
+    public function imports(TenantContext $context): Response
+    {
+        return Inertia::render('Imports/Index', [
+            'jobs' => ImportJob::query()->where('tenant_id', $context->id())->latest()->paginate(25),
+        ]);
+    }
+
+    public function importShow(string $uuid, TenantContext $context): Response
+    {
+        $job = ImportJob::query()->where('tenant_id', $context->id())->where('uuid', $uuid)->with(['rows', 'errors'])->firstOrFail();
+
+        return Inertia::render('Imports/Show', ['job' => $job]);
+    }
+
+    public function importFilePreview(Request $request, TenantContext $context, LegacyAssetFileReader $reader, ImportExportService $interop): RedirectResponse
+    {
+        $data = $request->validate([
+            'file' => ['required', 'file', 'max:10240', 'mimes:csv,txt,xlsx,xls'],
+            'strategy' => ['required', 'in:atomic,partial'],
+        ]);
+        try {
+            $rows = $reader->read($data['file'], $context->tenant());
+        } catch (RuntimeException $exception) {
+            return back()->withErrors(['file' => $exception->getMessage()]);
+        }
+        abort_if(count($rows) > 5000, 422, 'Maksimal 5.000 baris per impor.');
+        $job = $interop->preview($context->tenant(), $request->user(), $rows, 'assets', $data['strategy']);
+
+        return redirect()->route('imports.show', $job->uuid);
+    }
+
+    public function importFileCommit(Request $request, string $uuid, TenantContext $context, ImportExportService $interop): RedirectResponse
+    {
+        $job = ImportJob::query()->where('tenant_id', $context->id())->where('uuid', $uuid)->firstOrFail();
+        $interop->confirm($context->tenant(), $request->user(), $job);
+
+        return redirect()->route('imports.show', $job->uuid)->with('success', 'Impor aset selesai.');
+    }
+
+    public function importTemplate(): StreamedResponse
+    {
+        return response()->streamDownload(function (): void {
+            $stream = fopen('php://output', 'wb');
+            fputcsv($stream, ['Nama Barang', 'Kode Barang', 'Nomor Register', 'Kode Klasifikasi', 'Tahun Perolehan', 'Asal Perolehan', 'Harga Perolehan', 'Jumlah', 'Satuan', 'Sumber Dana', 'Lokasi', 'Kondisi']);
+            fputcsv($stream, ['Contoh Laptop', 'AST-001', '0001', 'ELEKTRONIK', '2026', 'Pembelian', '12500000', '1', 'UNIT', 'APBDES', 'KANTOR', 'Baik']);
+            fclose($stream);
+        }, 'template-impor-aset-desatara.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function interoperability(Request $request, ?string $type, TenantContext $context, PermissionResolver $permissions): Response

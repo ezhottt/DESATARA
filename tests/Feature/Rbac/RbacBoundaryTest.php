@@ -56,6 +56,6 @@ class RbacBoundaryTest extends TestCase
     {
         $tenant = Tenant::factory()->active()->create();
         $user = User::factory()->create();
-        $this->assertFalse(app(PermissionResolver::class)->allows($user,$tenant,'tenant.settings.update'));
+        $this->assertFalse(app(PermissionResolver::class)->allows($user, $tenant, 'tenant.settings.update'));
     }
 }
