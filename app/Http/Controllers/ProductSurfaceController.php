@@ -68,8 +68,9 @@ final class ProductSurfaceController extends Controller
     public function prepareAssetLabels(Request $request, TenantContext $context, QrTokenService $qr): Response
     {
         $data = $request->validate(['asset_uuids' => ['required', 'array', 'min:1', 'max:100'], 'asset_uuids.*' => ['required', 'uuid', 'distinct']]);
-        $assets = Asset::query()->where('tenant_id', $context->id())->whereIn('uuid', $data['asset_uuids'])->get();
+        $assets = Asset::query()->where('tenant_id', $context->id())->with('classification')->whereIn('uuid', $data['asset_uuids'])->get();
         abort_unless($assets->count() === count($data['asset_uuids']), 422);
+        abort_if($assets->contains(fn (Asset $asset) => blank($asset->classification?->code) || blank($asset->register_number)), 422, 'Label hanya dapat dicetak untuk aset yang sudah memiliki kode barang dan nomor register.');
 
         $labels = DB::transaction(fn () => $assets->map(function (Asset $asset) use ($context, $qr, $request): array {
             $active = AssetQrToken::query()->where('tenant_id', $context->id())->where('asset_id', $asset->id)->where('status', 'active')->lockForUpdate()->first();
@@ -80,7 +81,7 @@ final class ProductSurfaceController extends Controller
             return [
                 'uuid' => $asset->uuid,
                 'name' => $asset->name,
-                'asset_code' => $asset->asset_code,
+                'item_code' => $asset->classification?->code,
                 'register_number' => $asset->register_number,
                 'qr_url' => route('qr.public', ['token' => $raw]),
             ];

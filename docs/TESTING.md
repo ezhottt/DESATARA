@@ -2208,3 +2208,10 @@ B26.2 adds permission-gated single and bulk physical asset-label preparation fro
 Because active QR tokens are stored hash-only, preparing a new label rotates an existing active QR instead of attempting to recover plaintext. Batch preparation is atomic, tenant-scoped, limited to 100 assets per request, and protected by `documents.manage` plus operational-tenant middleware. The UI warns that old labels become invalid after preparation.
 
 Fresh post-B26.2 evidence: PHPUnit **141 passed / 542 assertions**, Pint **188 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, `git diff --check` **PASS**, runtime source hygiene **PASS**. Focused B26.2 coverage: **4 passed / 28 assertions** before the final full-suite run.
+
+
+# 158. B26.2 REGULATORY CORRECTION - 2026-10-05
+
+A compliance regression test now locks the corrected label contract: administrative item code + register number are primary; fixed sticker dimensions are not claimed as regulatory; QR remains an explicitly additional DESATARA element. Label preparation fails closed for records missing item code or register number.
+
+Focused correction evidence before final full-suite verification: **5 passed / 34 assertions**, Vite **PASS**, PHPStan **0 errors**.

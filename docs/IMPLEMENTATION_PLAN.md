@@ -2314,3 +2314,35 @@ Delivered scope:
 - client-side QR rendering using the `qrcode` package.
 
 This batch does not add barcode identifiers, recover stored QR plaintext, or weaken the existing public QR allowlist.
+
+
+# 93. B26.2 COMPLIANCE CORRECTION - ASSET IDENTIFICATION LABEL
+
+**Regulatory review date:** 2026-10-05
+
+## Authoritative baseline
+
+1. Permendagri 1/2016 remains the national baseline for village-asset management and is amended by Permendagri 3/2024.
+2. Permendagri 3/2024 changes, among other provisions, Article 28 and the annexed formats for village-asset reporting and the Buku Inventaris Aset Desa.
+3. Perbup Cianjur 33/2019 remains in force. Its use/administration provisions require assets after procurement to be recorded in the Buku Inventaris Aset Desa.
+4. The reviewed national/Cianjur texts do **not** establish a mandatory physical sticker dimension such as 50 x 30 mm or 60 x 40 mm, and do not establish QR as a replacement for official administrative identity.
+
+## Compliance matrix
+
+| Element | Status in DESATARA | Basis / treatment |
+| --- | --- | --- |
+| Kode barang | Required before label printing | Uses the asset classification code already maintained in DESATARA; treated as the administrative item-code identity. |
+| Nomor register | Required before label printing | Existing asset register number; printed prominently as administrative identity. |
+| Nama barang | Printed | Human-readable context. |
+| Nama desa | Printed | Ownership/context indicator, not a substitute for official location coding. |
+| QR DESATARA | Optional/additional digital element | Opaque-token lookup only; explicitly labelled as additional and never a substitute for kode barang/register. |
+| Fixed sticker dimensions | Not treated as regulatory | Removed from product controls. Print CSS provides an operational A4 layout only. |
+| Kode lokasi desa | Not fabricated | DESATARA currently has operational asset-location codes, not a separately verified official village-location-code field. B26.2 does not manufacture one. |
+
+## Fail-closed rule
+
+Physical label preparation is rejected when either the administrative item code or register number is missing. This prevents DESATARA from printing a label that could be mistaken for a complete administrative identity when the underlying inventory record is incomplete.
+
+## Correction to earlier B26.2 scope
+
+The initial B26.2 implementation exposed 50 x 30 mm and 60 x 40 mm as product choices. Those sizes were product assumptions, not verified regulatory requirements. They have been removed. The label surface now states that physical media sizing follows the village's printer/media needs and is not represented as a regulatory sticker dimension.
