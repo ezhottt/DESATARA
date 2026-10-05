@@ -2199,3 +2199,12 @@ GitHub Actions PR run #8 discovered all four configured jobs but did not start t
 Screenshot-driven verification found a Vue template branching defect and literal mojibake in active UI sources. B26.1 fixes template ref unwrapping for inventory, approvals, reports, master-data, and administration surfaces; localizes `fair` as **Rusak ringan** and responsible-party types to human-readable Indonesian; resolves responsible-party display names; and removes tracked mojibake from active Vue/controller sources.
 
 Fresh post-fix evidence: PHPUnit **137 passed / 514 assertions**, Pint **186 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, `git diff --check` **PASS**, and active-source mojibake scan **NONE**.
+
+
+# 157. B26.2 ASSET LABEL & QR PRINTING - 2026-10-05
+
+B26.2 adds permission-gated single and bulk physical asset-label preparation from the asset register/detail surface. Labels use the existing opaque public QR contract, include village name, asset name, asset code, and register number, support 50 x 30 mm and 60 x 40 mm physical sizes, and use an A4 print stylesheet.
+
+Because active QR tokens are stored hash-only, preparing a new label rotates an existing active QR instead of attempting to recover plaintext. Batch preparation is atomic, tenant-scoped, limited to 100 assets per request, and protected by `documents.manage` plus operational-tenant middleware. The UI warns that old labels become invalid after preparation.
+
+Fresh post-B26.2 evidence: PHPUnit **141 passed / 542 assertions**, Pint **188 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, `git diff --check` **PASS**, runtime source hygiene **PASS**. Focused B26.2 coverage: **4 passed / 28 assertions** before the final full-suite run.

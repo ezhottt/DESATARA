@@ -62,6 +62,8 @@ Route::middleware('auth')->group(function () {
         });
         Route::get('/assets', [ProductSurfaceController::class, 'assets'])->middleware('permission:assets.view')->name('assets.index');
         Route::get('/assets/create', [ProductSurfaceController::class, 'createAsset'])->middleware('permission:assets.create')->name('assets.create');
+        Route::post('/assets/labels/prepare', [ProductSurfaceController::class, 'prepareAssetLabels'])->middleware(['permission:documents.manage', 'tenant.operational'])->name('assets.labels.prepare');
+
         Route::post('/assets', [ProductSurfaceController::class, 'storeAsset'])->middleware(['permission:assets.create', 'tenant.operational'])->name('assets.store');
         Route::get('/assets/{uuid}/edit', [ProductSurfaceController::class, 'editAsset'])->middleware('permission:assets.update')->name('assets.edit');
         Route::get('/assets/{uuid}', [ProductSurfaceController::class, 'showAsset'])->middleware('permission:assets.view')->name('assets.show');

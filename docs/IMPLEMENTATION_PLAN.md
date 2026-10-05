@@ -2294,3 +2294,23 @@ Scope B26 sengaja tidak mengklaim mapping wizard bebas, saved mapping preset, ba
 Production readiness tetap mengikuti B17 dan tidak berubah oleh penyelesaian B26.
 
 ---
+
+
+# 92. B26.2 - ASSET LABEL & QR PRINTING
+
+**Status:** IMPLEMENTED LOCALLY / FINAL VERIFICATION GREEN
+
+Delivered scope:
+- single label preparation from asset detail;
+- bulk selection from asset register;
+- maximum 100 assets per batch;
+- tenant-scoped and permission-gated preparation;
+- opaque public QR URL using the existing QR security contract;
+- atomic QR issue/rotation for the whole batch;
+- explicit warning that previous QR labels are invalidated on rotation;
+- 50 x 30 mm and 60 x 40 mm label sizes;
+- A4 print layout;
+- village name, asset name, asset code, and register number on each label;
+- client-side QR rendering using the `qrcode` package.
+
+This batch does not add barcode identifiers, recover stored QR plaintext, or weaken the existing public QR allowlist.

@@ -11,6 +11,7 @@ use App\Models\AssetLocation;
 use App\Models\AssetMaintenance;
 use App\Models\AssetMutation;
 use App\Models\AssetPhoto;
+use App\Models\AssetQrToken;
 use App\Models\AssetReport;
 use App\Models\AssetSafeguard;
 use App\Models\AssetTransfer;
@@ -62,6 +63,30 @@ final class ProductSurfaceController extends Controller
         $items = Asset::query()->where('tenant_id', $context->id())->with('classification')->when($q, fn ($query) => $query->where(fn ($q2) => $q2->where('name', 'like', "%{$q}%")->orWhere('asset_code', 'like', "%{$q}%")->orWhere('register_number', 'like', "%{$q}%")))->latest()->paginate(25)->withQueryString()->through(fn (Asset $asset) => ['uuid' => $asset->uuid, 'name' => $asset->name, 'asset_code' => $asset->asset_code, 'register_number' => $asset->register_number, 'classification' => $asset->classification?->only(['code', 'name']), 'condition' => $asset->condition, 'lifecycle_status' => $asset->lifecycle_status, 'verification_status' => $asset->verification_status]);
 
         return Inertia::render('Surface/Index', ['surface' => 'assets', 'title' => 'Aset', 'description' => 'Daftar aset tenant aktif.', 'items' => $items, 'filters' => ['q' => $q], 'createUrl' => route('assets.create')]);
+    }
+
+    public function prepareAssetLabels(Request $request, TenantContext $context, QrTokenService $qr): Response
+    {
+        $data = $request->validate(['asset_uuids' => ['required', 'array', 'min:1', 'max:100'], 'asset_uuids.*' => ['required', 'uuid', 'distinct']]);
+        $assets = Asset::query()->where('tenant_id', $context->id())->whereIn('uuid', $data['asset_uuids'])->get();
+        abort_unless($assets->count() === count($data['asset_uuids']), 422);
+
+        $labels = DB::transaction(fn () => $assets->map(function (Asset $asset) use ($context, $qr, $request): array {
+            $active = AssetQrToken::query()->where('tenant_id', $context->id())->where('asset_id', $asset->id)->where('status', 'active')->lockForUpdate()->first();
+            [$raw] = $active
+                ? $qr->rotate($context->tenant(), $request->user(), $asset, $active)
+                : $qr->issue($context->tenant(), $request->user(), $asset);
+
+            return [
+                'uuid' => $asset->uuid,
+                'name' => $asset->name,
+                'asset_code' => $asset->asset_code,
+                'register_number' => $asset->register_number,
+                'qr_url' => route('qr.public', ['token' => $raw]),
+            ];
+        })->values());
+
+        return Inertia::render('Assets/Labels', ['labels' => $labels, 'tenant' => $context->tenant()->only(['uuid', 'name'])]);
     }
 
     public function createAsset(TenantContext $context): Response
