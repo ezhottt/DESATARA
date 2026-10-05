@@ -67,4 +67,4 @@ Baca [CONTRIBUTING.md](CONTRIBUTING.md) sebelum membuat perubahan. Bug dan featu
 
 DESATARA menggunakan [MIT License](LICENSE).
 
-**DESATARA â€” Platform Pengelolaan Aset Desa**
+**DESATARA - Platform Pengelolaan Aset Desa**
