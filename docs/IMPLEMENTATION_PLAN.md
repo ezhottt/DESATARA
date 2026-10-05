@@ -2373,7 +2373,7 @@ This is a semantic compatibility migration, not a destructive data rewrite.
 - DESATARA already uses Laravel 13, Inertia.js, Vue 3, Tailwind CSS, PostgreSQL, tenant context middleware, RBAC, asset UUIDs, master classifications, and the `qrcode` frontend dependency.
 - `tenants.village_code` is the existing tenant-owned code field. The application does not hardcode a village code. Label generation fails closed when it is empty.
 - Official item codes come from `asset_classifications.code`; operators do not type a replacement classification code.
-- `assets.register_number` is retained as the physical storage column for backward compatibility. The current domain/UI terminology is NUP.
+- `assets.register_number` is retained as the physical storage column for backward compatibility. Internal numbering/import compatibility may still use NUP terminology, but the physical asset label uses the stored Nomor Register.
 - `numbering_sequences` already existed and was unused. B26.2 uses it instead of adding a parallel numbering table.
 - Assets support historical reclassification. Because an issued NUP must remain immutable, a classification-scoped NUP could collide after reclassification. The final NUP namespace is therefore **tenant + acquisition year**, not tenant + classification + year.
 - Existing legacy/import data may represent aggregate quantity. Interactive registration now uses one record per physical unit, while legacy aggregate records remain compatible but cannot print a physical label until normalized.
@@ -2381,14 +2381,14 @@ This is a semantic compatibility migration, not a destructive data rewrite.
 ## Final inventory identity
 
 ```text
-[KODE WILAYAH DESA] / [KODE BARANG] / [TAHUN PEROLEHAN] / [NUP]
+[KODE WILAYAH DESA] / [KODE BARANG RESMI] / [TAHUN PEROLEHAN] / [NOMOR REGISTER]
 ```
 
 Sources:
 - village code: `tenant.village_code`;
 - item code: `asset.classification.code`;
-- acquisition year: derived from `asset.acquisition_date` and checked against stored `acquisition_year`;
-- NUP: `assets.register_number`, allocated by `AssetIdentityService`.
+- acquisition year: derived directly from `asset.acquisition_date`; the label does not use created_at, updated_at, print time, or the stored year projection as its source;
+- Nomor Register: `assets.register_number`, displayed with a minimum width of three digits.
 
 Example structure only:
 
@@ -2431,13 +2431,12 @@ The asset form now provides searchable master classification selection by code/n
 
 Label generation fails closed unless all of the following are valid:
 - tenant exists in active tenant context;
-- tenant has `village_code`;
+- tenant has an administrative village code in the configured numeric region-code format;
 - asset belongs to the active tenant;
-- asset has a master classification code;
+- asset has a leaf master classification with a numeric official-item-code shape;
 - asset has a non-empty name;
-- asset has acquisition date;
-- stored acquisition year agrees with the acquisition date;
-- asset has an issued NUP;
+- asset has acquisition date, from which the printed year is derived;
+- asset has a stored numeric Nomor Register;
 - asset quantity is exactly 1.
 
 Specific validation messages identify the missing/inconsistent field.
@@ -2552,13 +2551,13 @@ Frontend:
 - `resources/js/Pages/Assets/Labels.vue`
 - `resources/js/Pages/Surface/Index.vue`
 
-Demo/test/docs were updated to match the final NUP contract.
+Demo/test/docs are kept explicit: demo region/category values are not accepted as official label identity.
 
 No new npm/composer dependency was added in this final hardening; the existing `qrcode` dependency is reused.
 
 ## Known limitations / explicit non-claims
 
-- `tenant.village_code` is the current database source. B26.2 does not independently certify that every deployed tenant has been populated with an official government code; production onboarding must provide the correct code. Demo uses a non-official demo value.
+- `tenant.village_code` is the current database source. Label generation now rejects blank, slug-like, and demo values that do not match the administrative numeric village-code shape. The current local demo tenant therefore cannot print an official label until real master/onboarding data is supplied.
 - The classification schema has code/name but no dedicated alias table/field, so classification search currently covers code and name only.
 - Physical camera/printer scanning of the 15 mm Small QR is not hardware-tested here. Automated contracts verify QR generation, quiet-zone margin, and physical CSS sizing.
 - DESATARA currently has no asset SoftDeletes contract. B26.2 therefore guarantees non-reuse through monotonic numbering rather than implementing a new soft-delete subsystem.
@@ -2572,7 +2571,7 @@ Evidence from the actual DESATARA codebase before closing the label feature:
 
 - tenants.village_code already exists and is the tenant-owned source used as the village/region code in the printed identity; no global/static village code is introduced.
 - asset_classifications.code is the authoritative item/classification code. The asset form searches the existing classification master by code/name and stores the selected reference.
-- assets.register_number remains the physical storage field for backward compatibility; current domain/UI terminology is NUP/Register.
+- assets.register_number remains the physical storage field. The physical label calls this value Register; NUP terminology remains only where required by existing numbering/import compatibility.
 - numbering_sequences already exists in the B08 master-data schema. B26.2 reuses it with row locking; no new numbering table is created.
 - NUP allocation scope is tenant + classification + acquisition year. The period key is classification/year and allocation is zero-padded to at least three digits.
 - acquisition year is derived from acquisition_date, never from current/print time.
@@ -2584,3 +2583,23 @@ Evidence from the actual DESATARA codebase before closing the label feature:
 - no generic bulk-action framework existed beyond the asset-list selection introduced for B26.2, so the existing asset selection path is reused instead of adding a parallel framework.
 
 Compatibility note: preset physical sizes are product/printing presets from the approved feature specification, not represented as statutory sticker dimensions.
+
+
+# 96. B26.2 OFFICIAL LABEL IDENTITY CORRECTION
+
+**Status:** IMPLEMENTED LOCALLY / TARGETED ACCEPTANCE GREEN
+
+Repository audit found that the prior preview was assembling technically real database values that were not suitable as official label identity: the local demo tenant stored `DEMO-CIKADU` in `tenants.village_code`, while the only local classification version was the demo scheme `DEMO-ASET-DESA` whose level-1 codes are `TANAH`, `GEDUNG`, `KENDARAAN`, `PERALATAN`, and `ELEKTRONIK`.
+
+The corrected physical-label contract is fail-closed:
+
+- Kode Wilayah Desa source: `tenants.village_code`; it must have the administrative numeric village-code shape. Slugs such as `DEMO-CIKADU` are rejected and are never substituted.
+- Kode Barang source: `assets.classification_id -> asset_classifications.code`; the selected master entry must be a leaf-level numeric item code. Level-1 category labels such as `PERALATAN` are rejected. The shape check is a fail-closed guard against demo/category placeholders; it does not independently certify government provenance, which remains a master-data/onboarding responsibility.
+- Tahun Perolehan source: year parsed directly from `assets.acquisition_date`.
+- Nomor Register source: `assets.register_number`; it is not recalculated from row/list position and is displayed with minimum three-digit padding.
+- Village heading source: owning tenant name, normalized only for physical-label presentation by removing one leading `Desa `, removing the local/demo suffix ` Demo`, trimming, and uppercasing. Thus `Desa Cikadu Demo` renders as `PEMERINTAH DESA CIKADU`.
+- The physical label uses the term **Register**, not **NUP**. Existing NUP naming in numbering/import compatibility remains untouched outside the label surface.
+- QR remains the stable public asset UUID route and its response remains allowlisted.
+- Preview/print markup, Small/Medium/Large presets, copies control, QR placement, white background, black text, and print-first CSS remain unchanged.
+
+The current local demo data is intentionally not auto-converted into fake official values. Until official village and classification master data are supplied, printing is blocked with explicit validation rather than displaying demo/category fallbacks.

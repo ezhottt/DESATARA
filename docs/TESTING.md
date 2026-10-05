@@ -2280,3 +2280,31 @@ Migration verification used the isolated `desatara_test` database:
 3. forward migrate of the same migration PASS.
 
 The final NUP scope is tenant + classification + acquisition year. Generic/legacy interoperability remains backward compatible with incomplete or aggregate historical records; those records do not receive automatic label identity and are rejected by label validation until reconciled into an individual quantity-1 asset with complete identity.
+
+
+# 161. B26.2 OFFICIAL LABEL IDENTITY CORRECTION - 2026-10-05
+
+The label path was re-audited against actual schema and local data. The previous preview used non-empty database values without proving they were suitable administrative identifiers: local demo tenant `village_code=DEMO-CIKADU` and demo level-1 classification values such as `PERALATAN`.
+
+Corrected label-source contract:
+- Kode Wilayah Desa: `tenants.village_code`; blank or non-administrative/slug-like values are rejected.
+- Kode Barang: `assets.classification_id -> asset_classifications.code`; the printed source must be a leaf-level numeric item-code shape, not a category label.
+- Tahun: derived directly from `assets.acquisition_date`.
+- Register: stored `assets.register_number`, stable and padded to a minimum of three digits for display.
+- Heading: owning `tenants.name`, normalized only for physical-label presentation to avoid duplicate `Desa` and local `Demo` suffixes.
+- QR: unchanged stable asset UUID verification route with an allowlisted public response.
+
+Acceptance evidence:
+- targeted label suite: **25 passed / 149 assertions**;
+- full application suite: **173 passed / 708 assertions**;
+- Pint: **200 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- `git diff --check`: **PASS**;
+- runtime source hygiene: **PASS**;
+- label runtime scan for `DEMO-CIKADU`, `PERALATAN`, `NUP:`, `UNKNOWN`, and `N/A`: **NONE**.
+
+A direct local-data probe confirms the unmodified demo master is now fail-closed:
+`tenant_code=DEMO-CIKADU`, `classification_code=PERALATAN` -> `Label belum dapat dicetak karena Kode Wilayah Desa belum tersedia.`
+
+The demo dataset is intentionally not rewritten to invented government/master codes.

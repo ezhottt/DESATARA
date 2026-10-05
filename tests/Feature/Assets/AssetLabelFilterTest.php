@@ -4,6 +4,8 @@ namespace Tests\Feature\Assets;
 
 use App\Models\Asset;
 use App\Models\AssetClassification;
+use App\Models\ClassificationScheme;
+use App\Models\ClassificationVersion;
 use App\Models\Tenant;
 use App\Models\Unit;
 use App\Models\User;
@@ -23,7 +25,27 @@ final class AssetLabelFilterTest extends TestCase
 
         $user = User::query()->where('email', 'admin@demo.desatara.local')->firstOrFail();
         $tenant = Tenant::query()->where('village_code', 'DEMO-CIKADU')->firstOrFail();
-        $classification = AssetClassification::query()->where('status', 'active')->firstOrFail();
+        $tenant->forceFill(['name' => 'Desa Cikadu Demo', 'village_code' => '32.03.26.2007'])->save();
+
+        $scheme = ClassificationScheme::query()->create([
+            'code' => 'FILTER-LABEL-TEST',
+            'name' => 'Master Kode Barang Filter Test',
+            'scope' => 'national',
+            'status' => 'active',
+        ]);
+        $version = ClassificationVersion::query()->create([
+            'classification_scheme_id' => $scheme->id,
+            'version_label' => '2030',
+            'effective_from' => '2030-01-01',
+            'status' => 'published',
+        ]);
+        $classification = AssetClassification::query()->create([
+            'classification_version_id' => $version->id,
+            'code' => '1.3.2.10.01.02.003',
+            'name' => 'Mesin Potong Rumput',
+            'level' => 7,
+            'status' => 'active',
+        ]);
         $unit = Unit::query()->where('status', 'active')->firstOrFail();
 
         Asset::query()->create([
@@ -40,7 +62,7 @@ final class AssetLabelFilterTest extends TestCase
             'updated_by' => $user->id,
         ]);
 
-        $otherTenant = Tenant::factory()->active()->create(['village_code' => 'OTHER-VILLAGE']);
+        $otherTenant = Tenant::factory()->active()->create(['name' => 'Desa Lain', 'village_code' => '32.03.26.2008']);
         Asset::query()->create([
             'tenant_id' => $otherTenant->id,
             'classification_id' => $classification->id,
@@ -62,7 +84,9 @@ final class AssetLabelFilterTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Assets/Labels')
                 ->has('labels', 1)
-                ->where('labels.0.village_name', $tenant->name)
+                ->where('labels.0.village_name', 'CIKADU')
+                ->where('labels.0.village_code', '32.03.26.2007')
+                ->where('labels.0.item_code', '1.3.2.10.01.02.003')
                 ->where('labels.0.name', 'FILTER-ONLY-ASSET-XYZ')
             );
     }

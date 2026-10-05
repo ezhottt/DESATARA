@@ -88,7 +88,7 @@ onMounted(async () => {
           <strong class="inventory-code">{{ label.inventory_code }}</strong>
           <div class="metadata">
             <span>Tahun: <strong>{{ label.acquisition_year }}</strong></span>
-            <span>NUP: <strong>{{ label.nup }}</strong></span>
+            <span>Register: <strong>{{ label.register_number }}</strong></span>
           </div>
         </div>
         <div class="qr-wrap">
