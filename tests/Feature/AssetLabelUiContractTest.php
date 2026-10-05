@@ -19,6 +19,17 @@ final class AssetLabelUiContractTest extends TestCase
         $this->assertStringContainsString('Cetak label aset', file_get_contents(resource_path('js/Pages/Assets/Show.vue')));
     }
 
+    public function test_label_errors_are_visible_on_asset_register_and_detail(): void
+    {
+        $register = file_get_contents(resource_path('js/Pages/Surface/Index.vue'));
+        $detail = file_get_contents(resource_path('js/Pages/Assets/Show.vue'));
+
+        $this->assertStringContainsString('labelForm.errors.asset', $register);
+        $this->assertStringContainsString('filterLabelForm.errors.asset', $register);
+        $this->assertStringContainsString('filterLabelForm.errors.filter_q', $register);
+        $this->assertStringContainsString('labelPrint.errors.asset', $detail);
+    }
+
     public function test_label_sheet_keeps_print_qr_and_operational_presets_without_regulatory_claim(): void
     {
         $source = file_get_contents(resource_path('js/Pages/Assets/Labels.vue'));
