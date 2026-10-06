@@ -2602,4 +2602,26 @@ The corrected physical-label contract is fail-closed:
 - QR remains the stable public asset UUID route and its response remains allowlisted.
 - Preview/print markup, Small/Medium/Large presets, copies control, QR placement, white background, black text, and print-first CSS remain unchanged.
 
-The current local demo data is intentionally not auto-converted into fake official values. Until official village and classification master data are supplied, printing is blocked with explicit validation rather than displaying demo/category fallbacks.
+That fail-closed behavior remains the validator contract. The local demo dataset was later remediated separately: tenant identity is now `Desa Cikadu / 32.03.26.2002`, while the representative `Mesin Potong Rumput` asset is mapped to the leaf master code already used by the DESATARA label contract. Invalid slug/category values remain rejected.
+
+
+# 97. DEMO TENANT ADMINISTRATIVE DATA REMEDIATION
+
+**Status:** IMPLEMENTED LOCALLY / DEMO LABEL FLOW VERIFIED
+
+The demo dataset is now suitable for exercising the fail-closed asset-label workflow without weakening label validation.
+
+- Stable demo tenant anchor: `uuid=00000000-0000-4000-8000-000000000001`.
+- Tenant name: `Desa Cikadu`.
+- Tenant village code: `32.03.26.2002`.
+- The seeder updates the existing tenant by stable UUID, preventing creation of a duplicate tenant when the village code changes.
+- Existing demo assets are preserved on reseed rather than having historical/mutable projections reset.
+- The representative asset `Mesin Potong Rumput` is mapped to leaf classification `1.3.2.10.01.02.003` under the demo classification version so the physical-label contract can be exercised end-to-end.
+- Existing finalized demo reports are not reverted to draft during reseed.
+- `DEMO-CIKADU` remains an invalid label identity and is retained only in negative validation tests/historical evidence.
+- Demo login account remains `admin@demo.desatara.local`; credentials were not changed by this remediation.
+
+Local runtime verification after reseed:
+`32.03.26.2002 / 1.3.2.10.01.02.003 / 2021 / 003`.
+
+This change is demo/master-data remediation only. `AssetIdentityService` fail-closed validation and label fallback rules are unchanged.

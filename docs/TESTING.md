@@ -2331,3 +2331,46 @@ Verification:
 - Vite production build: **PASS**;
 - label runtime fallback scan for `DEMO-CIKADU`, `PERALATAN`, `UNKNOWN`, `N/A`, and `NUP:`: **NONE**;
 - runtime hygiene and `git diff --check`: **PASS**.
+
+
+# 163. DEMO TENANT LABEL-READY REMEDIATION - 2026-10-06
+
+The local DESATARA demo dataset was remediated without weakening the fail-closed label validator.
+
+Current demo tenant:
+- uuid: `00000000-0000-4000-8000-000000000001`
+- name: `Desa Cikadu`
+- village_code: `32.03.26.2002`
+- demo login account remains `admin@demo.desatara.local`
+
+Seeder behavior:
+- tenant upsert is anchored by stable UUID rather than the old village code, preventing duplicate tenants when administrative code changes;
+- existing demo assets are preserved on reseed instead of resetting guarded historical projections;
+- the representative `Mesin Potong Rumput` asset is mapped to leaf classification code `1.3.2.10.01.02.003`, the leaf code already used by the DESATARA label contract tests;
+- an existing finalized demo report remains finalized during reseed;
+- `DEMO-CIKADU` is not accepted by the label validator and remains only in negative tests/historical evidence.
+
+Local runtime evidence after `DemoSeeder`:
+- tenant: `Desa Cikadu / 32.03.26.2002`;
+- representative asset UUID: `c4930aab-54df-4dce-a332-cc52f36684a3`;
+- classification: `1.3.2.10.01.02.003`, level 7;
+- acquisition date: `2021-07-15`;
+- register: `003`;
+- generated inventory identity: `32.03.26.2002 / 1.3.2.10.01.02.003 / 2021 / 003`.
+
+HTTP verification against `127.0.0.1:8000` using the existing authenticated admin session:
+- asset detail: **200 OK**;
+- label prepare: **200 OK**;
+- preview contains village code: **YES**;
+- preview contains leaf item code: **YES**;
+- preview contains complete inventory code: **YES**;
+- preview contains `Kode Wilayah Desa belum tersedia`: **NO**.
+
+Quality gates:
+- targeted demo/label/import/identity suite: **27 passed / 156 assertions**;
+- full DESATARA suite: **178 passed / 752 assertions**;
+- Pint: **201 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- `git diff --check`: **PASS**;
+- runtime hygiene: **PASS**.

@@ -21,7 +21,7 @@ final class AssetRegistrationIdentityTest extends TestCase
         $this->seed(DemoSeeder::class);
 
         $user = User::query()->where('email', 'admin@demo.desatara.local')->firstOrFail();
-        $tenant = Tenant::query()->where('village_code', 'DEMO-CIKADU')->firstOrFail();
+        $tenant = Tenant::query()->where('village_code', '32.03.26.2002')->firstOrFail();
         $classification = AssetClassification::query()->where('status', 'active')->firstOrFail();
         $unit = Unit::query()->where('status', 'active')->firstOrFail();
 
@@ -74,7 +74,7 @@ final class AssetRegistrationIdentityTest extends TestCase
         $this->seed(DemoSeeder::class);
 
         $user = User::query()->where('email', 'admin@demo.desatara.local')->firstOrFail();
-        $tenant = Tenant::query()->where('village_code', 'DEMO-CIKADU')->firstOrFail();
+        $tenant = Tenant::query()->where('village_code', '32.03.26.2002')->firstOrFail();
         $classification = AssetClassification::query()->where('status', 'active')->firstOrFail();
         $unit = Unit::query()->where('status', 'active')->firstOrFail();
 

@@ -40,11 +40,11 @@ final class AssetLabelPrintingTest extends TestCase
                 ->component('Assets/Labels')
                 ->has('labels', 2)
                 ->where('labels.0.village_name', 'CIKADU')
-                ->where('labels.0.village_code', '32.03.26.2007')
+                ->where('labels.0.village_code', '32.03.26.2002')
                 ->where('labels.0.item_code', '1.3.2.10.01.02.003')
                 ->where('labels.0.acquisition_year', 2021)
                 ->where('labels.0.register_number', '001')
-                ->where('labels.0.inventory_code', '32.03.26.2007 / 1.3.2.10.01.02.003 / 2021 / 001')
+                ->where('labels.0.inventory_code', '32.03.26.2002 / 1.3.2.10.01.02.003 / 2021 / 001')
                 ->where('labels.0.qr_url', fn ($url) => is_string($url) && str_contains($url, '/verifikasi-aset/'.$first->uuid))
             );
 
@@ -52,22 +52,33 @@ final class AssetLabelPrintingTest extends TestCase
         $this->assertSame(1, AssetQrToken::query()->where('tenant_id', $tenant->id)->where('status', 'active')->count());
     }
 
-    public function test_demo_slug_and_demo_category_are_blocked_instead_of_printed_as_inventory_identity(): void
+    public function test_seeded_demo_representative_asset_can_prepare_label_with_administrative_identity(): void
     {
         $this->withoutVite();
         $this->seed(DemoSeeder::class);
 
         $user = User::query()->where('email', 'admin@demo.desatara.local')->firstOrFail();
-        $tenant = Tenant::query()->where('village_code', 'DEMO-CIKADU')->firstOrFail();
-        $asset = Asset::query()->where('tenant_id', $tenant->id)->firstOrFail();
+        $tenant = Tenant::query()->where('village_code', '32.03.26.2002')->firstOrFail();
+        $asset = Asset::query()
+            ->with('classification')
+            ->where('tenant_id', $tenant->id)
+            ->where('name', 'Mesin Potong Rumput')
+            ->firstOrFail();
 
         $this->actingAs($user)
             ->withSession(['active_tenant_uuid' => $tenant->uuid])
             ->post('/assets/labels/prepare', ['asset_uuids' => [$asset->uuid]])
-            ->assertSessionHasErrors('asset');
-
-        $this->assertSame('DEMO-CIKADU', $tenant->village_code);
-        $this->assertContains($asset->classification->code, ['TANAH', 'GEDUNG', 'KENDARAAN', 'PERALATAN', 'ELEKTRONIK']);
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Assets/Labels')
+                ->has('labels', 1)
+                ->where('labels.0.village_name', 'CIKADU')
+                ->where('labels.0.village_code', '32.03.26.2002')
+                ->where('labels.0.item_code', '1.3.2.10.01.02.003')
+                ->where('labels.0.acquisition_year', 2021)
+                ->where('labels.0.register_number', '003')
+                ->where('labels.0.inventory_code', '32.03.26.2002 / 1.3.2.10.01.02.003 / 2021 / 003')
+            );
     }
 
     public function test_public_uuid_verification_is_allowlisted_points_to_correct_asset_and_omits_sensitive_fields(): void
@@ -81,7 +92,7 @@ final class AssetLabelPrintingTest extends TestCase
             ->assertJsonStructure(['name', 'inventory_code', 'acquisition_year', 'status', 'village_name']);
 
         $this->assertSame($asset->name, $response->json('name'));
-        $this->assertSame('32.03.26.2007 / 1.3.2.10.01.02.003 / 2021 / 001', $response->json('inventory_code'));
+        $this->assertSame('32.03.26.2002 / 1.3.2.10.01.02.003 / 2021 / 001', $response->json('inventory_code'));
         $this->assertSame(
             ['name', 'inventory_code', 'acquisition_year', 'status', 'village_name'],
             array_keys($response->json())
@@ -139,11 +150,7 @@ final class AssetLabelPrintingTest extends TestCase
     {
         $this->seed(DemoSeeder::class);
 
-        $tenant = Tenant::query()->where('village_code', 'DEMO-CIKADU')->firstOrFail();
-        $tenant->forceFill([
-            'name' => 'Desa Cikadu Demo',
-            'village_code' => '32.03.26.2007',
-        ])->save();
+        $tenant = Tenant::query()->where('village_code', '32.03.26.2002')->firstOrFail();
 
         $user = User::query()->where('email', 'admin@demo.desatara.local')->firstOrFail();
         $scheme = ClassificationScheme::query()->create([

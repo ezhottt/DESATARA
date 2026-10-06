@@ -29,7 +29,7 @@ class DemoOperationalSeeder extends Seeder
             throw new RuntimeException('DemoOperationalSeeder hanya boleh dijalankan pada environment local atau testing.');
         }
 
-        $tenant = Tenant::query()->where('village_code', 'DEMO-CIKADU')->firstOrFail();
+        $tenant = Tenant::query()->where('uuid', '00000000-0000-4000-8000-000000000001')->firstOrFail();
         $user = User::query()->where('email', 'admin@demo.desatara.local')->firstOrFail();
         $assets = Asset::query()->where('tenant_id', $tenant->id)->orderBy('id')->get();
 
@@ -69,7 +69,7 @@ class DemoOperationalSeeder extends Seeder
         $period = ReportingPeriod::query()->updateOrCreate(['tenant_id' => $tenant->id, 'year' => 2026, 'period_type' => 'year'], ['start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'deadline' => '2027-01-31', 'status' => 'open']);
         $template = ReportTemplate::query()->updateOrCreate(['code' => 'DEMO-REGISTER'], ['name' => 'Register Aset Desa', 'description' => 'Template laporan demo.', 'status' => 'active']);
         $templateVersion = ReportTemplateVersion::query()->firstOrCreate(['report_template_id' => $template->id, 'version' => 1], ['regulatory_context' => [], 'schema_definition' => [], 'effective_from' => '2026-01-01', 'status' => 'published', 'published_at' => now()]);
-        AssetReport::query()->updateOrCreate(
+        AssetReport::query()->firstOrCreate(
             ['tenant_id' => $tenant->id, 'reporting_period_id' => $period->id, 'report_template_version_id' => $templateVersion->id, 'revision_number' => 1],
             ['status' => 'draft', 'generated_by' => $user->id, 'generated_at' => now()]
         );

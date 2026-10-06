@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Actions\Assets\ManageHistoricalAssetState;
 use App\Models\Asset;
 use App\Models\AssetClassification;
 use App\Models\AssetLocation;
@@ -33,8 +34,8 @@ class DemoSeeder extends Seeder
             $this->call(RbacSeeder::class);
 
             $tenant = Tenant::query()->updateOrCreate(
-                ['village_code' => 'DEMO-CIKADU'],
-                ['uuid' => '00000000-0000-4000-8000-000000000001', 'name' => 'Desa Cikadu Demo', 'province' => 'Jawa Barat', 'regency' => 'Cianjur', 'district' => 'Cikadu', 'address' => 'Kecamatan Cikadu, Kabupaten Cianjur', 'timezone' => 'Asia/Jakarta', 'locale' => 'id', 'status' => 'active', 'activated_at' => now()]
+                ['uuid' => '00000000-0000-4000-8000-000000000001'],
+                ['village_code' => '32.03.26.2002', 'name' => 'Desa Cikadu', 'province' => 'Jawa Barat', 'regency' => 'Cianjur', 'district' => 'Cikadu', 'address' => 'Kecamatan Cikadu, Kabupaten Cianjur', 'timezone' => 'Asia/Jakarta', 'locale' => 'id', 'status' => 'active', 'activated_at' => now()]
             );
 
             $user = User::query()->updateOrCreate(
@@ -58,6 +59,11 @@ class DemoSeeder extends Seeder
                 return [$item['code'] => $model];
             });
 
+            $labelClassification = AssetClassification::query()->updateOrCreate(
+                ['classification_version_id' => $version->id, 'code' => '1.3.2.10.01.02.003'],
+                ['parent_id' => $classes['PERALATAN']->id, 'name' => 'Mesin Potong Rumput', 'level' => 7, 'status' => 'active']
+            );
+
             $unit = Unit::query()->updateOrCreate(['code' => 'UNIT'], ['name' => 'Unit', 'symbol' => 'unit', 'status' => 'active']);
             $funding = FundingSource::query()->updateOrCreate(['tenant_id' => $tenant->id, 'code' => 'APBDES'], ['name' => 'APB Desa', 'status' => 'active']);
             $office = OrganizationalUnit::query()->updateOrCreate(['tenant_id' => $tenant->id, 'code' => 'PEMDES'], ['name' => 'Pemerintah Desa', 'type' => 'office', 'status' => 'active', 'valid_from' => '2026-01-01']);
@@ -79,10 +85,25 @@ class DemoSeeder extends Seeder
             foreach ($names as $index => $name) {
                 $classKey = $classKeys[$index] ?? ($index < 12 ? 'ELEKTRONIK' : 'PERALATAN');
                 $value = ($index + 1) * 1750000;
-                Asset::query()->updateOrCreate(
+                $targetClassificationId = $name === 'Mesin Potong Rumput'
+                    ? $labelClassification->id
+                    : $classes[$classKey]->id;
+
+                $asset = Asset::query()->firstOrCreate(
                     ['tenant_id' => $tenant->id, 'asset_code' => sprintf('DEMO-%03d', $index + 1)],
-                    ['uuid' => (string) Str::uuid(), 'classification_id' => $classes[$classKey]->id, 'register_number' => sprintf('%03d', intdiv($index, 8) + 1), 'name' => $name, 'description' => 'Data demo untuk audit tampilan dan alur DESATARA.', 'acquisition_date' => sprintf('%d-%02d-15', 2019 + ($index % 8), ($index % 12) + 1), 'acquisition_year' => 2019 + ($index % 8), 'acquisition_origin' => 'Pembelian', 'funding_source_id' => $funding->id, 'quantity' => 1, 'unit_id' => $unit->id, 'unit_price' => $value, 'acquisition_value' => $value, 'current_location_id' => $locations[$locationKeys[$index % $locationKeys->count()]]->id, 'current_responsible_party_id' => $responsible->id, 'condition' => $conditions[$index % count($conditions)], 'lifecycle_status' => $index % 9 === 0 ? 'draft' : 'active', 'verification_status' => $index % 4 === 0 ? 'unverified' : 'verified', 'created_by' => $user->id, 'updated_by' => $user->id]
+                    ['uuid' => (string) Str::uuid(), 'classification_id' => $targetClassificationId, 'register_number' => sprintf('%03d', intdiv($index, 8) + 1), 'name' => $name, 'description' => 'Data demo untuk audit tampilan dan alur DESATARA.', 'acquisition_date' => sprintf('%d-%02d-15', 2019 + ($index % 8), ($index % 12) + 1), 'acquisition_year' => 2019 + ($index % 8), 'acquisition_origin' => 'Pembelian', 'funding_source_id' => $funding->id, 'quantity' => 1, 'unit_id' => $unit->id, 'unit_price' => $value, 'acquisition_value' => $value, 'current_location_id' => $locations[$locationKeys[$index % $locationKeys->count()]]->id, 'current_responsible_party_id' => $responsible->id, 'condition' => $conditions[$index % count($conditions)], 'lifecycle_status' => $index % 9 === 0 ? 'draft' : 'active', 'verification_status' => $index % 4 === 0 ? 'unverified' : 'verified', 'created_by' => $user->id, 'updated_by' => $user->id]
                 );
+
+                if ((int) $asset->classification_id !== (int) $targetClassificationId) {
+                    app(ManageHistoricalAssetState::class)->reclassify(
+                        $asset,
+                        $targetClassificationId,
+                        $user->id,
+                        now(),
+                        (int) $asset->lock_version,
+                        'Sinkronisasi master demo untuk pengujian label aset.'
+                    );
+                }
             }
         });
 
