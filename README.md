@@ -6,7 +6,7 @@
 
 DESATARA adalah platform open-source untuk membantu Pemerintah Desa mengelola aset secara terstruktur, dapat ditelusuri, dan sadar regulasi. Fokusnya bukan sekadar daftar barang, tetapi tenant isolation, historical integrity, evidence, kewenangan, workflow, pelaporan, dan auditability.
 
-> **Status:** baseline implementasi B00-B25 telah terintegrasi ke `main`. B26 Excel Import & Legacy Data Migration telah selesai secara lokal dan sedang dalam proses integrasi. B17 production-readiness tetap fail-closed sampai seluruh evidence environment production terpenuhi.
+> **Status:** baseline implementasi B00-B26 telah terintegrasi ke `main`. B17 production-readiness tetap fail-closed sampai seluruh evidence environment production terpenuhi.
 
 ## Kenapa DESATARA?
 
@@ -49,7 +49,7 @@ DESATARA diposisikan sebagai platform open-source pendukung tata kelola: eksplor
 | B00-B16 | Runtime sampai Security/Performance/Accessibility Hardening | **Selesai - local gate GREEN** |
 | B17 | Production Readiness & Release | **Tooling selesai; production evidence/release gate belum lengkap** |
 | B18-B25 | Product Surface Completion | **Selesai - terintegrasi ke `main`; quality gate lokal hijau** |
-| B26 | Excel Import & Legacy Data Migration | **Selesai secara lokal - final verification hijau; menunggu integrasi** |
+| B26 | Excel Import & Legacy Data Migration | **Selesai - terintegrasi ke `main`; quality gate lokal hijau** |
 
 Target release tetap v1.0.0. Status B17 tidak boleh ditafsirkan sebagai production-ready sampai mandatory external evidence pada `docs/PRODUCTION-READINESS.md` terpenuhi.
 

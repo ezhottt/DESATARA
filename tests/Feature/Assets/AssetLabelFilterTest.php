@@ -24,8 +24,7 @@ final class AssetLabelFilterTest extends TestCase
         $this->seed(DemoSeeder::class);
 
         $user = User::query()->where('email', 'admin@demo.desatara.local')->firstOrFail();
-        $tenant = Tenant::query()->where('village_code', 'DEMO-CIKADU')->firstOrFail();
-        $tenant->forceFill(['name' => 'Desa Cikadu Demo', 'village_code' => '32.03.26.2007'])->save();
+        $tenant = Tenant::query()->where('village_code', '32.03.26.2002')->firstOrFail();
 
         $scheme = ClassificationScheme::query()->create([
             'code' => 'FILTER-LABEL-TEST',
@@ -85,7 +84,7 @@ final class AssetLabelFilterTest extends TestCase
                 ->component('Assets/Labels')
                 ->has('labels', 1)
                 ->where('labels.0.village_name', 'CIKADU')
-                ->where('labels.0.village_code', '32.03.26.2007')
+                ->where('labels.0.village_code', '32.03.26.2002')
                 ->where('labels.0.item_code', '1.3.2.10.01.02.003')
                 ->where('labels.0.name', 'FILTER-ONLY-ASSET-XYZ')
             );
