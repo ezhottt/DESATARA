@@ -25,9 +25,27 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::get('/', function (Request $request) {
-    return $request->session()->has('active_tenant_uuid') ? redirect()->route('dashboard') : Inertia::render('Foundation', ['product' => 'DESATARA']);
+    if ($request->session()->has('active_tenant_uuid')) {
+        return redirect()->route('dashboard');
+    }
+
+    $memberships = $request->user()->tenantMemberships()
+        ->with('tenant:id,uuid,name,status')
+        ->where('status', 'active')
+        ->get()
+        ->filter(fn ($membership) => $membership->isCurrentlyActive() && $membership->tenant->isOperational())
+        ->values();
+
+    if ($memberships->count() === 1) {
+        $request->session()->put('active_tenant_uuid', $memberships->first()->tenant->uuid);
+
+        return redirect()->route('dashboard');
+    }
+
+    return Inertia::render('Foundation', ['product' => 'DESATARA']);
 })->middleware('auth')->name('home');
 Route::get('/qr/{token}', [EvidenceController::class, 'publicQr'])->middleware('throttle:60,1')->name('qr.public');
+Route::get('/verifikasi-aset/{uuid}', [EvidenceController::class, 'publicAsset'])->middleware('throttle:60,1')->name('assets.verify');
 
 Route::middleware('auth')->group(function () {
     Route::post('/tenant/switch/{tenant:uuid}', TenantSwitchController::class)->name('tenant.switch');
@@ -45,6 +63,8 @@ Route::middleware('auth')->group(function () {
         });
         Route::get('/assets', [ProductSurfaceController::class, 'assets'])->middleware('permission:assets.view')->name('assets.index');
         Route::get('/assets/create', [ProductSurfaceController::class, 'createAsset'])->middleware('permission:assets.create')->name('assets.create');
+        Route::post('/assets/labels/prepare', [ProductSurfaceController::class, 'prepareAssetLabels'])->middleware(['permission:documents.manage', 'tenant.operational'])->name('assets.labels.prepare');
+
         Route::post('/assets', [ProductSurfaceController::class, 'storeAsset'])->middleware(['permission:assets.create', 'tenant.operational'])->name('assets.store');
         Route::get('/assets/{uuid}/edit', [ProductSurfaceController::class, 'editAsset'])->middleware('permission:assets.update')->name('assets.edit');
         Route::get('/assets/{uuid}', [ProductSurfaceController::class, 'showAsset'])->middleware('permission:assets.view')->name('assets.show');
@@ -68,6 +88,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/reports', [ProductSurfaceController::class, 'createReport'])->middleware(['permission:reports.view', 'tenant.operational'])->name('reports.store');
         Route::post('/reports/{id}/{action}', [ProductSurfaceController::class, 'reportAction'])->middleware(['permission:reports.view', 'tenant.operational'])->whereIn('action', ['review', 'finalize', 'revise'])->name('reports.action');
         Route::get('/reports/{id}/export', [ProductSurfaceController::class, 'reportExport'])->middleware('permission:reports.export')->name('reports.export');
+        Route::get('/imports', [ProductSurfaceController::class, 'imports'])->middleware('permission:imports.view')->name('imports.index');
+        Route::get('/imports/template', [ProductSurfaceController::class, 'importTemplate'])->middleware('permission:imports.view')->name('imports.template');
+        Route::get('/imports/{uuid}', [ProductSurfaceController::class, 'importShow'])->middleware('permission:imports.view')->name('imports.show');
+        Route::post('/imports/assets/preview', [ProductSurfaceController::class, 'importFilePreview'])->middleware(['permission:imports.create', 'tenant.operational'])->name('imports.preview');
+        Route::post('/imports/{uuid}/commit', [ProductSurfaceController::class, 'importFileCommit'])->middleware(['permission:imports.commit', 'tenant.operational'])->name('imports.commit');
         Route::get('/interoperability/{type?}', [ProductSurfaceController::class, 'interoperability'])->whereIn('type', ['imports', 'exports'])->name('interoperability.index');
         Route::post('/interoperability/import/preview', [ProductSurfaceController::class, 'importPreview'])->middleware(['permission:assets.create', 'tenant.operational'])->name('interoperability.import.preview');
         Route::post('/interoperability/import/{id}/commit', [ProductSurfaceController::class, 'importCommit'])->middleware(['permission:assets.create', 'tenant.operational'])->name('interoperability.import.commit');

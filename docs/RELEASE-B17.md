@@ -37,3 +37,8 @@ These are not marked PASS from local code inspection:
 ## Release decision
 
 The B17 implementation may be committed only when locally executable gates are green. It must not be called production-ready until every mandatory external gate above has current, machine-verifiable evidence and unresolved P0 is zero.
+
+
+## Evidence update - 2026-10-05
+
+The current B26/UI closeout branch has green local quality gates (PHPUnit **135 passed / 506 assertions**, Pint **185 files PASS**, PHPStan **0 errors**, Vite build **PASS**, diff check **PASS**). GitHub Actions run #8 was triggered for PR #3, but all jobs were prevented from starting by an account-level billing lock reported by GitHub. Therefore CI remains **BLOCKED**, not PASS, and this does not change the B17 decision: **PRODUCTION READY = NO**.

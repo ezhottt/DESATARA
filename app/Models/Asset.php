@@ -13,6 +13,16 @@ class Asset extends Model
 
     protected $attributes = ['quantity' => 1, 'lifecycle_status' => 'draft', 'verification_status' => 'unverified', 'lock_version' => 1];
 
+    public function getNupAttribute(): ?string
+    {
+        return $this->register_number;
+    }
+
+    public function setNupAttribute(?string $value): void
+    {
+        $this->attributes['register_number'] = $value;
+    }
+
     protected $fillable = ['uuid', 'tenant_id', 'classification_id', 'asset_code', 'register_number', 'name', 'description', 'acquisition_date', 'acquisition_year', 'acquisition_origin', 'funding_source_id', 'quantity', 'unit_id', 'unit_price', 'acquisition_value', 'current_location_id', 'current_responsible_party_id', 'condition', 'lifecycle_status', 'verification_status', 'lock_version', 'created_by', 'updated_by'];
 
     /** @return list<string> */

@@ -2,9 +2,11 @@
 
 **Platform Pengelolaan Aset Desa**
 
+![DESATARA login](docs/images/desatara-login.png)
+
 DESATARA adalah platform open-source untuk membantu Pemerintah Desa mengelola aset secara terstruktur, dapat ditelusuri, dan sadar regulasi. Fokusnya bukan sekadar daftar barang, tetapi tenant isolation, historical integrity, evidence, kewenangan, workflow, pelaporan, dan auditability.
 
-> **Status:** baseline implementasi B00-B25 telah terintegrasi ke `main` dan terverifikasi pada quality gate lokal. B17 production-readiness tooling telah diimplementasikan; release production tetap fail-closed sampai seluruh evidence environment production terpenuhi.
+> **Status:** baseline implementasi B00-B25 telah terintegrasi ke `main`. B26 Excel Import & Legacy Data Migration telah selesai secara lokal dan sedang dalam proses integrasi. B17 production-readiness tetap fail-closed sampai seluruh evidence environment production terpenuhi.
 
 ## Kenapa DESATARA?
 
@@ -14,10 +16,10 @@ Pengelolaan aset desa membutuhkan lebih dari CRUD: siapa yang berwenang, bukti a
 
 - Laravel 13 + Inertia.js + Vue 3 + Tailwind CSS + PostgreSQL.
 - Login/logout berbasis session, throttling, forgot/reset password.
-- Branding dasar DESATARA.
-- Automated test, Pint, PHPStan/Larastan, dan production build sebagai quality gate lokal.
-
-Tenant boundary, RBAC, authority, master data, asset core, historical state, evidence/QR, lifecycle, inventory, workflow, reporting, interoperability, dashboard/search, hardening, serta product surface B18-B25 telah diimplementasikan dan terintegrasi pada `main`. Status implementasi tidak sama dengan deklarasi production-ready.
+- Multi-desa dengan active-tenant context dan tenant isolation.
+- Master data, register aset, lifecycle, inventarisasi, approval, reporting, audit, dashboard, dan pencarian.
+- Impor aset lama melalui CSV/XLSX dengan preview, validasi, duplicate protection, dan commit terkontrol.
+- PHPUnit, Pint, PHPStan/Larastan, dan Vite production build sebagai quality gate.
 
 ## Quick Start
 
@@ -44,27 +46,12 @@ DESATARA diposisikan sebagai platform open-source pendukung tata kelola: eksplor
 
 | Batch | Scope | Status |
 | --- | --- | --- |
-| B00 | Repository & Runtime Foundation | **Selesai** |
-| B01 | Authentication Foundation | **Selesai** |
-| B02 | Tenant Boundary | **Selesai** |
-| B03 | RBAC | **Selesai** |
-| B04 | Officials & Regulatory Authority | **Selesai** |
-| B05 | Regulatory Traceability | **Selesai** |
-| B06 | Master Data & Classification | **Selesai** |
-| B07 | Asset Core | **Selesai** |
-| B08 | Historical Asset State | **Selesai** |
-| B09 | Documents, Evidence & QR | **Selesai** |
-| B10 | Lifecycle Operations | **Selesai** |
-| B11 | Inventory & Reconciliation | **Selesai** |
-| B12 | Workflow & Approval Engine | **Selesai** |
-| B13 | Reporting | **Selesai** |
-| B14 | Import, Export & Interoperability | **Selesai** |
-| B15 | Dashboard, Search & UX Completion | **Selesai** |
-| B16 | Security, Performance & Accessibility Hardening | **Selesai - local gate GREEN** |
-| B17 | Production Readiness & Release | **Readiness implementation selesai; production evidence/release gate belum lengkap** |
+| B00-B16 | Runtime sampai Security/Performance/Accessibility Hardening | **Selesai - local gate GREEN** |
+| B17 | Production Readiness & Release | **Tooling selesai; production evidence/release gate belum lengkap** |
 | B18-B25 | Product Surface Completion | **Selesai - terintegrasi ke `main`; quality gate lokal hijau** |
+| B26 | Excel Import & Legacy Data Migration | **Selesai secara lokal - final verification hijau; menunggu integrasi** |
 
-Target release tetap v1.0.0. Status B17 tidak boleh ditafsirkan sebagai production-ready sampai mandatory external evidence pada docs/PRODUCTION-READINESS.md terpenuhi.
+Target release tetap v1.0.0. Status B17 tidak boleh ditafsirkan sebagai production-ready sampai mandatory external evidence pada `docs/PRODUCTION-READINESS.md` terpenuhi.
 
 ## Dokumentasi
 
@@ -80,4 +67,4 @@ Baca [CONTRIBUTING.md](CONTRIBUTING.md) sebelum membuat perubahan. Bug dan featu
 
 DESATARA menggunakan [MIT License](LICENSE).
 
-**DESATARA — Platform Pengelolaan Aset Desa**
+**DESATARA - Platform Pengelolaan Aset Desa**

@@ -1,30 +1,17 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import AppShell from '../Layouts/AppShell.vue';
-
-defineOptions({ layout: AppShell });
-
-const props = defineProps({ query: String, assets: Object, locations: Array, responsible_parties: Array });
-const query = ref(props.query);
-const submit = () => router.get('/search', { q: query.value }, { preserveState: true, replace: true });
+import { Head, Link, router } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import AppShell from '../Layouts/AppShell.vue'
+defineOptions({ layout: AppShell })
+const props = defineProps({ query: String, assets: Object, locations: Array, responsible_parties: Array })
+const query = ref(props.query)
+const submit = () => router.get('/search', { q: query.value }, { preserveState: true, replace: true })
+const label = (value) => ({ organizational_unit: 'Unit organisasi', membership: 'Pengguna', good: 'Baik', damaged: 'Rusak', broken: 'Rusak berat', fair: 'Rusak ringan', active: 'Aktif', draft: 'Draf', verified: 'Terverifikasi', unverified: 'Belum diverifikasi' }[value] || value || '-')
 </script>
-
-<template>
-    <Head title="Cari aset — DESATARA" />
-    <main class="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-8">
-        <div class="mx-auto max-w-6xl space-y-6">
-            <header><Link href="/dashboard" class="text-sm font-semibold text-blue-700 hover:underline">← Dashboard</Link><h1 class="mt-3 text-3xl font-semibold">Cari aset</h1><p class="mt-2 text-slate-600">Pencarian hanya menampilkan aset pada desa aktif.</p></header>
-            <form class="flex gap-3" role="search" @submit.prevent="submit"><label for="asset-search" class="sr-only">Cari nama, kode, atau nomor register</label><input id="asset-search" v-model="query" type="search" class="min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-3 py-2" placeholder="Nama, kode, atau nomor register" /><button class="rounded-md bg-blue-800 px-4 py-2 font-semibold text-white hover:bg-blue-900" type="submit">Cari</button></form>
-            <section aria-live="polite" class="rounded-lg border border-slate-200 bg-white shadow-sm">
-                <p v-if="!assets.data.length" class="p-6 text-slate-600">{{ query ? 'Tidak ada aset yang cocok.' : 'Belum ada aset.' }}</p>
-                <div v-else class="divide-y divide-slate-200"><article v-for="asset in assets.data" :key="asset.uuid" class="p-5"><h2 class="font-semibold">{{ asset.name }}</h2><p class="mt-1 text-sm text-slate-600">{{ asset.asset_code || 'Tanpa kode' }} · {{ asset.register_number || 'Tanpa nomor register' }}</p><p class="mt-2 text-sm">{{ asset.condition }} · {{ asset.lifecycle_status }} · {{ asset.verification_status }}</p></article></div>
-                <nav v-if="assets.links?.length > 3" aria-label="Pagination" class="flex flex-wrap gap-2 border-t border-slate-200 p-4"><Link v-for="link in assets.links" :key="link.label" :href="link.url || '#'" :aria-current="link.active ? 'page' : undefined" :aria-disabled="!link.url ? 'true' : undefined" :class="['rounded border px-3 py-1 text-sm', link.active ? 'bg-blue-800 text-white' : 'bg-white', !link.url && 'pointer-events-none opacity-50']">{{ link.label.replace(/&laquo;|&raquo;/g, '') }}</Link></nav>
-            </section>
-            <section v-if="locations.length || responsible_parties.length" aria-label="Hasil data terkait" class="grid gap-4 sm:grid-cols-2">
-                <div class="rounded-lg border border-slate-200 bg-white p-5"><h2 class="font-semibold">Lokasi</h2><p v-for="location in locations" :key="location.id" class="mt-2 text-sm">{{ location.name }} <span class="text-slate-500">({{ location.code }})</span></p></div>
-                <div class="rounded-lg border border-slate-200 bg-white p-5"><h2 class="font-semibold">Penanggung jawab</h2><p v-for="party in responsible_parties" :key="party.id" class="mt-2 text-sm">{{ party.party_type }}</p></div>
-            </section>
-        </div>
-    </main>
-</template>
+<template><Head title="Cari aset" /><main class="mx-auto max-w-7xl space-y-7 px-4 py-8 sm:px-6 lg:py-10">
+<header><p class="text-xs font-bold uppercase tracking-[0.2em] text-blue-700">Pencarian</p><h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Temukan aset</h1><p class="mt-2 text-slate-600">Cari berdasarkan nama, kode aset, atau NUP pada desa aktif.</p></header>
+<form class="flex gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm" role="search" @submit.prevent="submit"><label for="asset-search" class="sr-only">Cari aset</label><input id="asset-search" v-model="query" type="search" autofocus class="min-w-0 flex-1 border-0 bg-transparent px-2 py-2 outline-none" placeholder="Contoh: laptop, AST-001, atau NUP"><button class="rounded-lg bg-[#0B2E5B] px-5 py-2.5 text-sm font-bold text-white">Cari</button></form>
+<div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]"><section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold">Hasil aset</h2><p class="mt-1 text-sm text-slate-500">{{ query ? 'Hasil untuk “' + query + '”' : 'Semua aset yang tersedia' }}</p></div><div v-if="assets.data.length" class="divide-y divide-slate-100"><Link v-for="asset in assets.data" :key="asset.uuid" :href="`/assets/${asset.uuid}`" class="block px-5 py-4 hover:bg-slate-50"><div class="flex flex-wrap items-start justify-between gap-3"><div><h3 class="font-bold text-slate-900">{{ asset.name }}</h3><p class="mt-1 text-sm text-slate-500">{{ asset.asset_code || 'Tanpa kode' }} · {{ asset.register_number || 'Tanpa NUP' }}</p></div><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold">{{ label(asset.condition) }}</span></div><p class="mt-3 text-xs text-slate-500">{{ label(asset.lifecycle_status) }} · {{ label(asset.verification_status) }}</p></Link></div><div v-else class="px-5 py-12 text-center"><p class="font-semibold">{{ query ? 'Aset tidak ditemukan' : 'Belum ada aset' }}</p><p class="mt-1 text-sm text-slate-500">Coba kata kunci lain atau periksa register aset.</p></div></section>
+<aside class="space-y-4"><section class="rounded-2xl border border-slate-200 bg-white p-5"><h2 class="font-bold">Lokasi terkait</h2><p v-if="!locations.length" class="mt-3 text-sm text-slate-500">Tidak ada lokasi terkait.</p><p v-for="location in locations" :key="location.id" class="mt-3 text-sm"><span class="font-semibold">{{ location.name }}</span><span class="block text-xs text-slate-500">{{ location.code }}</span></p></section><section class="rounded-2xl border border-slate-200 bg-white p-5"><h2 class="font-bold">Penanggung jawab</h2><p v-if="!responsible_parties.length" class="mt-3 text-sm text-slate-500">Tidak ada data terkait.</p><p v-for="party in responsible_parties" :key="party.id" class="mt-3 text-sm font-medium">{{ party.label || label(party.party_type) }}</p></section></aside></div>
+<nav v-if="assets.links?.length > 3" aria-label="Pagination" class="flex flex-wrap gap-2"><Link v-for="link in assets.links" :key="link.label" :href="link.url || '#'" :aria-current="link.active ? 'page' : undefined" :class="['rounded-lg border px-3 py-2 text-sm', link.active ? 'border-blue-800 bg-blue-800 text-white' : 'border-slate-300 bg-white', !link.url && 'pointer-events-none opacity-50']">{{ link.label.replace(/&laquo;|&raquo;/g, '') }}</Link></nav>
+</main></template>

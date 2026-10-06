@@ -10,7 +10,7 @@ class RbacSeeder extends Seeder
 {
     public function run(): void
     {
-        $codes = ['assets.view', 'assets.create', 'assets.update', 'documents.view', 'documents.manage', 'mutations.request', 'maintenance.manage', 'inventory.execute', 'transfers.request', 'disposals.request', 'approvals.view', 'approvals.action', 'reports.view', 'reports.export', 'audit.view', 'users.manage', 'tenant.settings.update'];
+        $codes = ['assets.view', 'assets.create', 'assets.update', 'documents.view', 'documents.manage', 'mutations.request', 'maintenance.manage', 'inventory.execute', 'transfers.request', 'disposals.request', 'approvals.view', 'approvals.action', 'reports.view', 'reports.export', 'audit.view', 'users.manage', 'tenant.settings.update', 'imports.view', 'imports.create', 'imports.commit'];
         foreach ($codes as $code) {
             [$domain,$action] = explode('.', $code, 2);
             Permission::query()->updateOrCreate(['code' => $code], ['domain' => $domain, 'action' => $action]);
@@ -25,7 +25,7 @@ class RbacSeeder extends Seeder
         foreach (['kepala_desa', 'sekretaris_desa', 'bpd_monitoring', 'auditor', 'viewer'] as $code) {
             Role::query()->where('code', $code)->firstOrFail()->permissions()->sync($view);
         }
-        $operator = Permission::query()->whereIn('code', ['assets.view', 'assets.create', 'assets.update', 'documents.view', 'documents.manage', 'mutations.request', 'maintenance.manage', 'inventory.execute', 'transfers.request', 'disposals.request', 'reports.view'])->pluck('id');
+        $operator = Permission::query()->whereIn('code', ['assets.view', 'assets.create', 'assets.update', 'documents.view', 'documents.manage', 'mutations.request', 'maintenance.manage', 'inventory.execute', 'transfers.request', 'disposals.request', 'reports.view', 'imports.view', 'imports.create', 'imports.commit'])->pluck('id');
         Role::query()->where('code', 'pengurus_aset')->firstOrFail()->permissions()->sync($operator);
     }
 }

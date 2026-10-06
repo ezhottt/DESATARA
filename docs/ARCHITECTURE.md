@@ -543,14 +543,14 @@ Pisahkan:
 - database ID;
 - UUID;
 - kode barang;
-- nomor register;
-- QR token.
+- NUP (disimpan pada kolom legacy `register_number`);
+- QR token / public asset UUID.
 
 Tidak satu pun boleh diasumsikan identik.
 
 Kode barang mengikuti regulatory coding system.
 
-Register number harus unik pada scope yang ditentukan.
+NUP harus unik dan immutable. Kontrak DESATARA saat ini memakai scope `tenant_id + acquisition_year`; kode barang tetap bagian dari kode inventaris tetapi bukan namespace NUP agar reklasifikasi historis tidak menciptakan collision.
 
 QR menggunakan opaque token/UUID, bukan database ID.
 
@@ -1463,13 +1463,13 @@ Namun seluruh tenant-owned table wajib memiliki isolation strategy.
 
 Unique constraint harus tenant-aware.
 
-Bukan:
+Untuk NUP aset, jangan gunakan:
 
 `UNIQUE(register_number)`
 
-tetapi jika aturan domain memungkinkan:
+Kontrak DESATARA saat ini menggunakan partial unique index:
 
-`UNIQUE(tenant_id, register_number)`
+`UNIQUE(tenant_id, acquisition_year, register_number) WHERE register_number IS NOT NULL AND acquisition_year IS NOT NULL`
 
 Hal yang sama berlaku untuk identifier tenant-specific lainnya.
 

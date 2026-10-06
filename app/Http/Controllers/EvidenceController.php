@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Asset;
 use App\Models\Document;
+use App\Models\Tenant;
+use App\Services\Assets\AssetIdentityService;
 use App\Services\Evidence\QrTokenService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +21,21 @@ class EvidenceController extends Controller
         abort_unless($document->visibility === 'private' && $document->storage_state === 'stored' && $document->malware_scan_status !== 'infected', 404);
 
         return Storage::disk($document->storage_disk)->download($document->storage_path, $document->original_filename, ['Content-Type' => $document->mime_type]);
+    }
+
+    public function publicAsset(string $uuid, AssetIdentityService $identity): JsonResponse
+    {
+        $asset = Asset::query()->with('classification')->where('uuid', $uuid)->firstOrFail();
+        $tenant = Tenant::query()->findOrFail($asset->tenant_id);
+        $label = $identity->labelPayload($tenant, $asset);
+
+        return response()->json([
+            'name' => $label['name'],
+            'inventory_code' => $label['inventory_code'],
+            'acquisition_year' => $label['acquisition_year'],
+            'status' => $asset->lifecycle_status,
+            'village_name' => $label['village_name'],
+        ]);
     }
 
     public function publicQr(string $token, QrTokenService $qr): JsonResponse

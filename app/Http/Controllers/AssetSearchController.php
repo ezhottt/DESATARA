@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetLocation;
+use App\Models\OrganizationalUnit;
 use App\Models\ResponsibleParty;
+use App\Models\TenantMembership;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,7 +29,13 @@ class AssetSearchController extends Controller
         }
 
         $locations = AssetLocation::query()->where('tenant_id', $context->id())->when($query !== '', fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('code', 'like', $like)))->limit(10)->get(['id', 'name', 'code']);
-        $responsibleParties = ResponsibleParty::query()->where('tenant_id', $context->id())->where('status', 'active')->limit(10)->get(['id', 'party_type', 'membership_id', 'organizational_unit_id']);
+        $responsibleParties = ResponsibleParty::query()->where('tenant_id', $context->id())->where('status', 'active')->limit(10)->get(['id', 'party_type', 'membership_id', 'organizational_unit_id'])->map(function (ResponsibleParty $party): array {
+            $label = $party->party_type === 'organizational_unit'
+                ? OrganizationalUnit::query()->whereKey($party->organizational_unit_id)->value('name')
+                : TenantMembership::query()->whereKey($party->membership_id)->with('user:id,name')->first()?->user?->name;
+
+            return ['id' => $party->id, 'party_type' => $party->party_type, 'label' => $label ?? ($party->party_type === 'organizational_unit' ? 'Unit organisasi' : 'Pengguna')];
+        });
 
         return Inertia::render('Search', [
             'query' => $query,

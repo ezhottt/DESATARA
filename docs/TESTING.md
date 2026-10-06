@@ -2178,3 +2178,156 @@ The following are locked:
 **TESTING & ACCEPTANCE CRITERIA DESATARA v1.0 — LOCKED**
 
 This document is the canonical verification and release-acceptance contract for DESATARA.
+
+
+# 155. CURRENT VERIFICATION EVIDENCE - 2026-10-05
+
+The B26/UI closeout branch was verified locally with current reproducible evidence:
+
+- PHPUnit: **135 passed / 506 assertions**.
+- Pint: **185 files PASS**.
+- PHPStan/Larastan: **0 errors**.
+- Vite production build: **PASS**.
+- `git diff --check`: **PASS**.
+- Focused B26 import suite: **5 passed / 30 assertions**, covering CSV preview/commit, XLSX end-to-end preview/commit, duplicate protection, permission/navigation, and friendly legacy-XLS rejection.
+
+GitHub Actions PR run #8 discovered all four configured jobs but did not start their steps because GitHub reported an account-level billing lock. It must not be recorded as CI PASS. Rerun is required after the external account lock is cleared.
+
+
+# 156. B26.1 UI / PRODUCT SURFACE HARDENING - 2026-10-05
+
+Screenshot-driven verification found a Vue template branching defect and literal mojibake in active UI sources. B26.1 fixes template ref unwrapping for inventory, approvals, reports, master-data, and administration surfaces; localizes `fair` as **Rusak ringan** and responsible-party types to human-readable Indonesian; resolves responsible-party display names; and removes tracked mojibake from active Vue/controller sources.
+
+Fresh post-fix evidence: PHPUnit **137 passed / 514 assertions**, Pint **186 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, `git diff --check` **PASS**, and active-source mojibake scan **NONE**.
+
+
+# 157. B26.2 ASSET LABEL & QR PRINTING - 2026-10-05
+
+B26.2 adds permission-gated single and bulk physical asset-label preparation from the asset register/detail surface. Labels use the existing opaque public QR contract, include village name, asset name, asset code, and register number, support 50 x 30 mm and 60 x 40 mm physical sizes, and use an A4 print stylesheet.
+
+Because active QR tokens are stored hash-only, preparing a new label rotates an existing active QR instead of attempting to recover plaintext. Batch preparation is atomic, tenant-scoped, limited to 100 assets per request, and protected by `documents.manage` plus operational-tenant middleware. The UI warns that old labels become invalid after preparation.
+
+Fresh post-B26.2 evidence: PHPUnit **141 passed / 542 assertions**, Pint **188 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, `git diff --check` **PASS**, runtime source hygiene **PASS**. Focused B26.2 coverage: **4 passed / 28 assertions** before the final full-suite run.
+
+
+# 158. B26.2 REGULATORY CORRECTION - 2026-10-05
+
+A compliance regression test now locks the corrected label contract: administrative item code + register number are primary; fixed sticker dimensions are not claimed as regulatory; QR remains an explicitly additional DESATARA element. Label preparation fails closed for records missing item code or register number.
+
+Focused correction evidence before final full-suite verification: **5 passed / 34 assertions**, Vite **PASS**, PHPStan **0 errors**.
+
+
+# 159. NUP SEMANTIC REGRESSION - 2026-10-05
+
+Regression coverage locks current NUP terminology in the asset form and physical label, the NUP CSV template header, and import compatibility with both current NUP headers and legacy register-number aliases. Storage/snapshot field names remain backward compatible.
+
+
+# 160. B26.2 FINAL LABEL / IDENTITY VERIFICATION - 2026-10-05
+
+Targeted verification after the final identity implementation:
+
+- **35 tests / 186 assertions PASS** across label identity, preview/print, stable QR, authorization, tenant isolation, NUP allocation, real process concurrency, validation, filter printing, current/legacy import, and B14/B26 interoperability.
+- Real race test: Laravel process concurrency produced distinct `001` and `002` allocations for simultaneous requests in the same tenant/classification/year.
+- Migration safety on `desatara_test`: fresh migration PASS, latest rollback PASS, reapply PASS.
+- PHPStan checkpoint after implementation: **0 errors**.
+
+Full application suite after implementation:
+- **165 tests / 663 assertions PASS**.
+
+Coverage added or strengthened includes:
+1. composite inventory identity from tenant/master/date/NUP;
+2. tenant/classification/year NUP isolation;
+3. zero-padding and monotonic non-reuse;
+4. database duplicate rejection;
+5. issued identity immutability;
+6. actual concurrent NUP generation;
+7. acquisition year derivation from acquisition date;
+8. prevention of client-supplied NUP during interactive registration;
+9. quantity-1 physical asset registration;
+10. required label-field validation;
+11. stable public UUID QR;
+12. public verification allowlist / sensitive-field omission;
+13. unauthorized label preparation;
+14. cross-tenant selected bulk rejection;
+15. tenant-scoped filtered print;
+16. current CSV master-code/date/NUP semantics;
+17. legacy import aliases;
+18. Small/Medium/Large physical presets and copy count;
+19. long-name/inventory-code wrapping contract;
+20. Small QR quiet-zone contract;
+21. print `break-inside` contract and shell-free preview.
+
+Final formatter/static/frontend/diff gates are recorded after the final documentation sync.
+
+
+# 160. B26.2 LABEL ASET DESA - FINAL ACCEPTANCE EVIDENCE - 2026-10-05
+
+Final acceptance verification after repository audit and compatibility corrections:
+
+- targeted label/identity/import/privacy/filter suite: **27 passed / 149 assertions**;
+- real PostgreSQL process-concurrency NUP test: **1 passed / 2 assertions**, producing distinct allocations in the same tenant + classification + acquisition-year scope;
+- legacy B14/B26 interoperability compatibility suite plus current identity import: **9 passed / 55 assertions**;
+- full project suite: **167 passed / 675 assertions**;
+- Pint: **200 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- git diff check: **PASS**;
+- runtime source hygiene scan: **PASS**.
+
+Migration verification used the isolated `desatara_test` database:
+1. `migrate:fresh --env=testing --force` PASS;
+2. rollback of `2026_10_05_120000_harden_asset_registration_identity` PASS;
+3. forward migrate of the same migration PASS.
+
+The final NUP scope is tenant + classification + acquisition year. Generic/legacy interoperability remains backward compatible with incomplete or aggregate historical records; those records do not receive automatic label identity and are rejected by label validation until reconciled into an individual quantity-1 asset with complete identity.
+
+
+# 161. B26.2 OFFICIAL LABEL IDENTITY CORRECTION - 2026-10-05
+
+The label path was re-audited against actual schema and local data. The previous preview used non-empty database values without proving they were suitable administrative identifiers: local demo tenant `village_code=DEMO-CIKADU` and demo level-1 classification values such as `PERALATAN`.
+
+Corrected label-source contract:
+- Kode Wilayah Desa: `tenants.village_code`; blank or non-administrative/slug-like values are rejected.
+- Kode Barang: `assets.classification_id -> asset_classifications.code`; the printed source must be a leaf-level numeric item-code shape, not a category label.
+- Tahun: derived directly from `assets.acquisition_date`.
+- Register: stored `assets.register_number`, stable and padded to a minimum of three digits for display.
+- Heading: owning `tenants.name`, normalized only for physical-label presentation to avoid duplicate `Desa` and local `Demo` suffixes.
+- QR: unchanged stable asset UUID verification route with an allowlisted public response.
+
+Acceptance evidence:
+- targeted label suite: **25 passed / 149 assertions**;
+- full application suite: **173 passed / 708 assertions**;
+- Pint: **200 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- `git diff --check`: **PASS**;
+- runtime source hygiene: **PASS**;
+- label runtime scan for `DEMO-CIKADU`, `PERALATAN`, `NUP:`, `UNKNOWN`, and `N/A`: **NONE**.
+
+A direct local-data probe confirms the unmodified demo master is now fail-closed:
+`tenant_code=DEMO-CIKADU`, `classification_code=PERALATAN` -> `Label belum dapat dicetak karena Kode Wilayah Desa belum tersedia.`
+
+The demo dataset is intentionally not rewritten to invented government/master codes.
+
+
+# 162. LABEL FAIL-CLOSED ROUTE VALIDATION - 2026-10-06
+
+The physical-label path was re-audited from the asset detail form through `POST /assets/labels/prepare`.
+
+New route-level regression coverage proves that requests originating from the asset detail page are redirected back to the same asset detail page, do not render the label preview, and expose the exact `asset` validation message when any required administrative identity source is unavailable:
+
+- missing/invalid village administrative code -> `Label belum dapat dicetak karena Kode Wilayah Desa belum tersedia.`;
+- missing/invalid master item code -> `Label belum dapat dicetak karena Kode Barang belum tersedia.`;
+- missing acquisition date/year source -> `Label belum dapat dicetak karena Tahun Perolehan belum tersedia.`;
+- missing stored register -> `Label belum dapat dicetak karena Nomor Register belum tersedia.`.
+
+The existing detail-page red alert continues to render `labelPrint.errors.asset`. The asset detail identity summary now uses the UI term `Register` instead of the stale `Tanpa NUP` fallback; internal numbering/import NUP compatibility is unchanged.
+
+Verification:
+- targeted label acceptance suite: **27 passed / 159 assertions**;
+- full DESATARA suite: **177 passed / 726 assertions**;
+- Pint: **201 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- label runtime fallback scan for `DEMO-CIKADU`, `PERALATAN`, `UNKNOWN`, `N/A`, and `NUP:`: **NONE**;
+- runtime hygiene and `git diff --check`: **PASS**.

@@ -60,3 +60,39 @@ Kode, migration, policy, service, UI, API, job, report, import/export, test, dan
 Artifact berikut dibuat ketika lifecycle membutuhkannya: `BACKUP-RESTORE.md`, `CHANGELOG.md`, OpenAPI machine-readable contract, runbook operasi, dan release evidence. Ketiadaannya sebelum fase yang ditentukan tidak boleh ditafsirkan sebagai izin mengabaikan requirement upstream.
 
 **DOCUMENT CONTROL & CONTRACT INDEX DESATARA v1.0 — CONTROLLED BASELINE**
+
+
+## 8. Current implementation checkpoint (2026-10-05)
+
+- B00-B25 are integrated on `main` through baseline commit `b0f1f23`.
+- B26 Excel Import & Legacy Data Migration plus product UX closeout is proposed in PR #3 from `feat/b26-ui-closeout`.
+- B26 does not alter the controlled regulatory, tenancy, authority, workflow, or historical-integrity contracts.
+- Current local verification evidence on the PR branch: PHPUnit **135 passed / 506 assertions**, Pint **185 files PASS**, PHPStan **0 errors**, Vite production build **PASS**, and `git diff --check` **PASS**.
+- GitHub Actions workflow is configured as four parallel gates (`test`, `pint`, `phpstan`, `frontend`). Run #8 was triggered but jobs were not started because GitHub reported an account-level billing lock; this is external evidence blockage, not a green CI result.
+- B17 remains fail-closed: `PRODUCTION READY = NO` until mandatory external evidence is current and machine-verifiable.
+
+
+### B26.1 UI hardening checkpoint
+
+B26.1 is a non-contract-changing product-surface hardening on PR #3. It corrects Vue template surface selection, human-readable localization, and tracked UI source encoding without changing regulatory, tenancy, workflow, or historical-integrity invariants. Fresh local gate: **137 tests / 514 assertions**, Pint **186 files**, PHPStan **0 errors**, Vite **PASS**.
+
+
+### B26.2 final asset-label identity checkpoint - 2026-10-05
+
+The earlier B26.2 label implementation and subsequent NUP terminology correction are superseded by the final inventory-identity contract documented in `IMPLEMENTATION_PLAN.md #95`.
+
+Final contract highlights:
+- inventory code = tenant village code / master item code / acquisition year / NUP;
+- NUP generated with existing `numbering_sequences`, scoped by tenant + acquisition year;
+- stable public UUID QR verification;
+- single, selected bulk, and filtered bulk preview/print;
+- Small/Medium/Large operational presets;
+- DB uniqueness and identity immutability migration;
+- current + legacy import compatibility.
+
+Production deployment remains outside this checkpoint.
+
+
+### B26.2 Label Aset Desa final checkpoint - 2026-10-05
+
+Status: implementation and local verification GREEN. Identity composition is validated tenant village code + validated leaf classification master code + year derived from acquisition date + stored Nomor Register. NUP allocation is race-safe and scoped by tenant/classification/year. Label preview supports single, selected bulk, and current search-filter bulk printing with Small/Medium/Large operational presets and copy count. Public UUID verification is allowlisted. Legacy import compatibility is preserved. Production deployment and PR merge remain outside this checkpoint.

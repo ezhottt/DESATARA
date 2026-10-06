@@ -50,6 +50,20 @@ final class B18B25ProductSurfaceTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('Dashboard')->where('metrics', []));
     }
 
+    public function test_shared_permissions_are_available_to_the_product_navigation(): void
+    {
+        [$tenant, $user, $membership] = $this->member();
+        $this->grant($membership, 'assets.view');
+        $this->grant($membership, 'inventory.execute');
+
+        $this->actingAs($user)->withSession(['active_tenant_uuid' => $tenant->uuid])
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('permissions', fn ($permissions) => $permissions['assets.view'] === true && $permissions['inventory.execute'] === true)
+            );
+    }
+
     public function test_master_data_is_scoped_to_active_tenant(): void
     {
         [$tenant, $user, $membership] = $this->member();
@@ -74,6 +88,28 @@ final class B18B25ProductSurfaceTest extends TestCase
 
         $this->actingAs($user)->withSession(['active_tenant_uuid' => $tenant->uuid])
             ->get('/administration/settings')->assertForbidden();
+    }
+
+    public function test_lifecycle_surface_exposes_active_tenant_locations_for_domain_forms(): void
+    {
+        [$tenant, $user, $membership] = $this->member();
+        $this->grant($membership, 'assets.view');
+        $location = AssetLocation::query()->create(['tenant_id' => $tenant->id, 'code' => 'DEST', 'name' => 'Gudang Desa', 'location_type' => 'warehouse', 'status' => 'active']);
+
+        $this->actingAs($user)->withSession(['active_tenant_uuid' => $tenant->uuid])
+            ->get('/lifecycle/mutations')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('locations.0.id', $location->id)->where('locations.0.name', 'Gudang Desa'));
+    }
+
+    public function test_inertia_shares_flash_feedback(): void
+    {
+        [$tenant, $user] = $this->member();
+
+        $this->actingAs($user)->withSession(['active_tenant_uuid' => $tenant->uuid, 'success' => 'Data berhasil disimpan.'])
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('flash.success', 'Data berhasil disimpan.'));
     }
 
     public function test_lifecycle_uses_domain_permission_instead_of_generic_asset_update(): void
