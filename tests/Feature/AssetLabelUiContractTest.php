@@ -28,6 +28,8 @@ final class AssetLabelUiContractTest extends TestCase
         $this->assertStringContainsString('filterLabelForm.errors.asset', $register);
         $this->assertStringContainsString('filterLabelForm.errors.filter_q', $register);
         $this->assertStringContainsString('labelPrint.errors.asset', $detail);
+        $this->assertStringContainsString('Register:', $detail);
+        $this->assertStringNotContainsString('Tanpa NUP', $detail);
     }
 
     public function test_label_sheet_keeps_print_qr_and_operational_presets_without_regulatory_claim(): void

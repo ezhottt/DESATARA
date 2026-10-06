@@ -2308,3 +2308,26 @@ A direct local-data probe confirms the unmodified demo master is now fail-closed
 `tenant_code=DEMO-CIKADU`, `classification_code=PERALATAN` -> `Label belum dapat dicetak karena Kode Wilayah Desa belum tersedia.`
 
 The demo dataset is intentionally not rewritten to invented government/master codes.
+
+
+# 162. LABEL FAIL-CLOSED ROUTE VALIDATION - 2026-10-06
+
+The physical-label path was re-audited from the asset detail form through `POST /assets/labels/prepare`.
+
+New route-level regression coverage proves that requests originating from the asset detail page are redirected back to the same asset detail page, do not render the label preview, and expose the exact `asset` validation message when any required administrative identity source is unavailable:
+
+- missing/invalid village administrative code -> `Label belum dapat dicetak karena Kode Wilayah Desa belum tersedia.`;
+- missing/invalid master item code -> `Label belum dapat dicetak karena Kode Barang belum tersedia.`;
+- missing acquisition date/year source -> `Label belum dapat dicetak karena Tahun Perolehan belum tersedia.`;
+- missing stored register -> `Label belum dapat dicetak karena Nomor Register belum tersedia.`.
+
+The existing detail-page red alert continues to render `labelPrint.errors.asset`. The asset detail identity summary now uses the UI term `Register` instead of the stale `Tanpa NUP` fallback; internal numbering/import NUP compatibility is unchanged.
+
+Verification:
+- targeted label acceptance suite: **27 passed / 159 assertions**;
+- full DESATARA suite: **177 passed / 726 assertions**;
+- Pint: **201 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- label runtime fallback scan for `DEMO-CIKADU`, `PERALATAN`, `UNKNOWN`, `N/A`, and `NUP:`: **NONE**;
+- runtime hygiene and `git diff --check`: **PASS**.
