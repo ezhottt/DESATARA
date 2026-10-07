@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -19,6 +20,33 @@ class SecurityTest extends TestCase
     public function test_guest_is_redirected_from_protected_home(): void
     {
         $this->get('/')->assertRedirect('/login');
+    }
+
+    public function test_local_storage_disk_is_not_publicly_served(): void
+    {
+        $this->assertFalse(config('filesystems.disks.local.serve'));
+    }
+
+    public function test_expensive_mutation_routes_are_throttled(): void
+    {
+        $expected = [
+            'assets.documents.store' => 'throttle:10,1',
+            'imports.preview' => 'throttle:5,1',
+            'imports.commit' => 'throttle:5,1',
+            'interoperability.import.preview' => 'throttle:5,1',
+            'interoperability.import.commit' => 'throttle:5,1',
+            'interoperability.export' => 'throttle:5,1',
+        ];
+
+        foreach ($expected as $name => $middleware) {
+            $route = Route::getRoutes()->getByName($name);
+            $this->assertNotNull($route, $name);
+            $this->assertContains($middleware, $route->gatherMiddleware(), $name);
+        }
+
+        $reportAction = Route::getRoutes()->getByName('reports.action');
+        $this->assertNotNull($reportAction);
+        $this->assertContains('permission:reports.export', $reportAction->gatherMiddleware());
     }
 
     public function test_web_responses_include_security_headers_and_private_cache_control(): void

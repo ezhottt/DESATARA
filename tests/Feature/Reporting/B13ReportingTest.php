@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\AssetClassification;
 use App\Models\ClassificationScheme;
 use App\Models\ClassificationVersion;
+use App\Models\Document;
 use App\Models\Permission;
 use App\Models\ReportTemplate;
 use App\Models\ReportTemplateVersion;
@@ -71,6 +72,39 @@ class B13ReportingTest extends TestCase
         $this->assertSame('report_artifact', $service->export($tenant, $user, $finalized)->document_type);
         $this->assertSame('finalized', $finalized->refresh()->status);
         $this->assertDatabaseHas('report_snapshots', ['asset_report_id' => $finalized->id]);
+        $artifact = Document::query()->findOrFail($finalized->snapshot->artifact_document_id);
+        $this->assertSame('clean', $artifact->malware_scan_status);
+        $this->assertSame('stored', $artifact->storage_state);
+    }
+
+    public function test_report_viewer_cannot_review_or_revise_reports(): void
+    {
+        [$tenant, $author, $authorMembership] = $this->memberContext();
+        $this->grant($authorMembership, 'reports.view');
+        $this->grant($authorMembership, 'reports.export');
+        $viewer = User::factory()->create();
+        $viewerMembership = TenantMembership::factory()->active()->for($viewer)->for($tenant)->create();
+        $this->grant($viewerMembership, 'reports.view');
+        [$period, $version] = $this->reportDefinition($tenant);
+        $service = app(ReportingService::class);
+        $draft = $service->generate($tenant, $author, $period, $version);
+
+        try {
+            $service->review($tenant, $viewer, $draft);
+            $this->fail('A reports.view-only member reviewed a report.');
+        } catch (AuthorizationException) {
+            $this->assertSame('draft', $draft->refresh()->status);
+        }
+
+        $service->review($tenant, $author, $draft);
+        $finalized = $service->finalize($tenant, $author, $draft);
+
+        try {
+            $service->revise($tenant, $viewer, $finalized);
+            $this->fail('A reports.view-only member revised a finalized report.');
+        } catch (AuthorizationException) {
+            $this->assertSame('finalized', $finalized->refresh()->status);
+        }
     }
 
     public function test_cross_tenant_report_generation_is_rejected(): void

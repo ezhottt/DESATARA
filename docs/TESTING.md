@@ -2331,3 +2331,49 @@ Verification:
 - Vite production build: **PASS**;
 - label runtime fallback scan for `DEMO-CIKADU`, `PERALATAN`, `UNKNOWN`, `N/A`, and `NUP:`: **NONE**;
 - runtime hygiene and `git diff --check`: **PASS**.
+
+
+# 164. PRE-LAUNCH SECURITY HARDENING - 2026-10-07
+
+The pre-launch audit was replayed against current `origin/main`. An older dirty security patch found on a stale local baseline was preserved separately and was **not** committed onto current main. Security fixes were re-applied selectively against the latest source.
+
+TDD evidence before source remediation: the focused security suite produced **7 expected failures / 15 passes (66 assertions)**. The failures directly demonstrated: private-root local serving enabled, missing throttles, upload bypassing quarantine, unscanned stored download returning 200, unbounded direct-import service path, client-controlled import identity/state, and `reports.view` being sufficient to review reports.
+
+After remediation, focused coverage verifies:
+
+- report view-only actors cannot review or revise;
+- route and service authorization agree on `reports.export`;
+- untrusted uploads are `pending / quarantined`;
+- only `clean / stored` documents are downloadable;
+- successful clean-document authorization writes a minimal audit event;
+- server-generated report/export artifacts remain `clean / stored`;
+- private local filesystem serving is disabled;
+- upload/import/export route throttles are registered;
+- direct JSON import rejects 1,001 rows;
+- shared service rejects 5,001 rows while B26 CSV/XLSX regression remains green at its existing contract;
+- client `uuid`, lifecycle state, and verification state are not preserved into normalized import payload.
+
+Dependency evidence:
+- initial npm audit: **2 critical + 1 high**;
+- `source-map-js` transitive patch `1.2.1 -> 1.2.2`: applied after one-package dry-run;
+- current npm audit: **2 critical + 0 high**, both rooted in `concurrently@10.0.5 -> shell-quote@1.9.0`;
+- no `npm audit fix --force` or unreviewed dependency override was applied;
+- Composer audit: **BLOCKED** because Composer is unavailable and temporary PHAR retrieval failed.
+
+Final full-suite/static/frontend counts are recorded after the final documentation sync and final-tree gate.
+
+
+Final-tree verification for this security hardening checkpoint:
+- focused security regression after remediation: **22 passed / 89 assertions** before the later import-cap and download-audit additions;
+- B14 + B26 import-cap compatibility: **10 passed / 45 assertions**;
+- report authorization regression: **4 passed / 19 assertions**, covering both review and revise denial for a view-only actor;
+- evidence/download security regression: **6 passed / 20 assertions**;
+- full DESATARA suite: **185 passed / 758 assertions**;
+- Pint: **201 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- `git diff --check`: **PASS**;
+- runtime source hygiene: **PASS**;
+- final npm audit: **0 high, 2 critical**, both rooted in `concurrently -> shell-quote`.
+
+Production verdict remains **NO-GO** because dependency and external operational evidence gates remain open/blocked.

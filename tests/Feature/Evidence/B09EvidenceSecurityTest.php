@@ -6,7 +6,10 @@ use App\Models\Asset;
 use App\Models\AssetClassification;
 use App\Models\ClassificationScheme;
 use App\Models\ClassificationVersion;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Tenant;
+use App\Models\TenantMembership;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\Evidence\DocumentService;
@@ -28,10 +31,58 @@ class B09EvidenceSecurityTest extends TestCase
         $document = app(DocumentService::class)->store($tenant, $user, $asset, UploadedFile::fake()->createWithContent('evidence.pdf', "%PDF-1.7\ncontent"), 'legal');
 
         $this->assertSame('private', $document->visibility);
+        $this->assertSame('pending', $document->malware_scan_status);
+        $this->assertSame('quarantined', $document->storage_state);
         $this->assertStringStartsNotWith('/', $document->storage_path);
         Storage::disk('private')->assertExists($document->storage_path);
         $this->assertNotNull($document->uuid);
         $this->assertStringNotContainsString('storage/app/public', $document->storage_path);
+    }
+
+    public function test_unscanned_stored_document_cannot_be_downloaded(): void
+    {
+        Storage::fake('private');
+        [$tenant, $user, $asset] = $this->assetFixture();
+        $membership = TenantMembership::factory()->active()->for($user)->for($tenant)->create();
+        $permission = Permission::query()->firstOrCreate(['code' => 'documents.view'], ['domain' => 'documents', 'action' => 'view']);
+        $role = Role::query()->create(['code' => uniqid('docs-'), 'name' => 'Documents Viewer', 'scope_type' => 'tenant', 'is_system' => false]);
+        $role->permissions()->attach($permission);
+        $membership->roles()->attach($role, ['assigned_at' => now()]);
+
+        $document = app(DocumentService::class)->store($tenant, $user, $asset, UploadedFile::fake()->createWithContent('evidence.pdf', "%PDF-1.7\ncontent"), 'legal');
+        $document->forceFill(['storage_state' => 'stored', 'malware_scan_status' => 'not_available'])->save();
+
+        $this->actingAs($user)
+            ->withSession(['active_tenant_uuid' => $tenant->uuid])
+            ->get('/documents/'.$document->uuid.'/download')
+            ->assertNotFound();
+    }
+
+    public function test_clean_document_download_records_minimal_audit_event(): void
+    {
+        Storage::fake('private');
+        [$tenant, $user, $asset] = $this->assetFixture();
+        $membership = TenantMembership::factory()->active()->for($user)->for($tenant)->create();
+        $permission = Permission::query()->firstOrCreate(['code' => 'documents.view'], ['domain' => 'documents', 'action' => 'view']);
+        $role = Role::query()->create(['code' => uniqid('docs-'), 'name' => 'Documents Viewer', 'scope_type' => 'tenant', 'is_system' => false]);
+        $role->permissions()->attach($permission);
+        $membership->roles()->attach($role, ['assigned_at' => now()]);
+
+        $document = app(DocumentService::class)->store($tenant, $user, $asset, UploadedFile::fake()->createWithContent('evidence.pdf', "%PDF-1.7\ncontent"), 'legal');
+        $document->forceFill(['storage_state' => 'stored', 'malware_scan_status' => 'clean'])->save();
+
+        $this->actingAs($user)
+            ->withSession(['active_tenant_uuid' => $tenant->uuid])
+            ->get('/documents/'.$document->uuid.'/download')
+            ->assertOk();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'tenant_id' => $tenant->id,
+            'actor_id' => $user->id,
+            'action' => 'document.download.authorized',
+            'subject_type' => 'document',
+            'subject_id' => $document->id,
+        ]);
     }
 
     public function test_upload_rejects_mime_spoofing_and_path_traversal_filename(): void
