@@ -520,7 +520,7 @@ final class ProductSurfaceController extends Controller
 
     public function importPreview(Request $request, TenantContext $context, ImportExportService $interop): RedirectResponse
     {
-        $data = $request->validate(['rows' => ['required', 'array', 'min:1'], 'strategy' => ['required', 'in:atomic,partial']]);
+        $data = $request->validate(['rows' => ['required', 'array', 'min:1', 'max:1000'], 'rows.*' => ['required', 'array'], 'strategy' => ['required', 'in:atomic,partial']]);
         $job = $interop->preview($context->tenant(), $request->user(), $data['rows'], 'assets', $data['strategy']);
 
         return back()->with('success', "Import preview {$job->uuid}: {$job->valid_rows} valid, {$job->invalid_rows} invalid.");

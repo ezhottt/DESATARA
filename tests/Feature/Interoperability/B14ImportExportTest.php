@@ -6,6 +6,8 @@ use App\Models\Asset;
 use App\Models\AssetClassification;
 use App\Models\ClassificationScheme;
 use App\Models\ClassificationVersion;
+use App\Models\Document;
+use App\Models\ImportRow;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -34,6 +36,49 @@ class B14ImportExportTest extends TestCase
         $service->confirm($tenant, $user, $job);
     }
 
+    public function test_import_service_rejects_more_than_the_global_row_count(): void
+    {
+        [$tenant, $user, $membership] = $this->context();
+        $this->grant($membership, 'assets.create');
+
+        $this->expectException(RuntimeException::class);
+        app(ImportExportService::class)->preview($tenant, $user, array_fill(0, 5001, ['name' => 'A']));
+    }
+
+    public function test_direct_import_route_rejects_more_than_one_thousand_rows(): void
+    {
+        [$tenant, $user, $membership] = $this->context();
+        $this->grant($membership, 'assets.create');
+
+        $this->actingAs($user)
+            ->withSession(['active_tenant_uuid' => $tenant->uuid])
+            ->post('/interoperability/import/preview', [
+                'rows' => array_fill(0, 1001, ['name' => 'A']),
+                'strategy' => 'atomic',
+            ])
+            ->assertSessionHasErrors('rows');
+    }
+
+    public function test_import_drops_client_controlled_identity_and_state_fields(): void
+    {
+        [$tenant, $user, $membership] = $this->context();
+        $this->grant($membership, 'assets.create');
+        $classification = $this->classification();
+
+        $job = app(ImportExportService::class)->preview($tenant, $user, [[
+            'name' => 'Safe import',
+            'classification_id' => $classification->id,
+            'uuid' => '11111111-1111-4111-8111-111111111111',
+            'lifecycle_status' => 'disposed',
+            'verification_status' => 'verified',
+        ]]);
+
+        $payload = ImportRow::query()->where('import_job_id', $job->id)->firstOrFail()->normalized_payload;
+        $this->assertArrayNotHasKey('uuid', $payload);
+        $this->assertArrayNotHasKey('lifecycle_status', $payload);
+        $this->assertArrayNotHasKey('verification_status', $payload);
+    }
+
     public function test_interoperability_uses_honest_state_machine(): void
     {
         [$tenant, $user, $membership] = $this->context();
@@ -43,6 +88,9 @@ class B14ImportExportTest extends TestCase
         $this->assertSame('READY_FOR_EXPORT', $export->status);
         $export = $service->markExported($tenant, $user, $export);
         $this->assertSame('EXPORTED', $export->status);
+        $document = Document::query()->findOrFail($export->generated_document_id);
+        $this->assertSame('clean', $document->malware_scan_status);
+        $this->assertSame('stored', $document->storage_state);
         $this->assertSame('RECONCILED', $service->reconcile($tenant, $user, $export)->status);
     }
 

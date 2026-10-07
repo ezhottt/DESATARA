@@ -22,6 +22,8 @@ use RuntimeException;
 
 final class ImportExportService
 {
+    private const MAX_ROWS = 5000;
+
     public function __construct(private ActiveTenantMembership $memberships, private PermissionResolver $permissions, private AssetIdentityService $assetIdentity) {}
 
     /** @param list<array<string,mixed>> $rows */
@@ -30,6 +32,9 @@ final class ImportExportService
         $this->authorizeAny($tenant, $actor, ['imports.create', 'assets.create']);
         if ($importType !== 'assets' || ! in_array($strategy, ['atomic', 'partial'], true)) {
             throw new RuntimeException('Unsupported import contract.');
+        }
+        if (count($rows) > self::MAX_ROWS) {
+            throw new RuntimeException('Import exceeds the maximum supported row count.');
         }
 
         return DB::transaction(function () use ($tenant, $actor, $rows, $importType, $strategy): ImportJob {
@@ -75,7 +80,7 @@ final class ImportExportService
                 ) {
                     $payload['register_number'] = $this->assetIdentity->nextNup($tenant, (int) $payload['classification_id'], (int) $payload['acquisition_year']);
                 }
-                $asset = Asset::query()->create([...$payload, 'tenant_id' => $tenant->id, 'created_by' => $actor->id, 'updated_by' => $actor->id]);
+                $asset = Asset::query()->create([...$payload, 'tenant_id' => $tenant->id, 'lifecycle_status' => 'active', 'verification_status' => 'unverified', 'created_by' => $actor->id, 'updated_by' => $actor->id]);
                 $row->update(['status' => 'imported', 'created_resource_type' => 'asset', 'created_resource_id' => $asset->id]);
             }
             $job->update(['status' => 'completed', 'imported_rows' => ImportRow::query()->where('import_job_id', $job->id)->where('status', 'imported')->count()]);
@@ -109,7 +114,7 @@ final class ImportExportService
             $path = 'exports/'.$tenant->uuid.'/'.$export->uuid.'.json';
             Storage::disk('private')->put($path, $bytes);
             $checksum = hash('sha256', $bytes);
-            $doc = Document::query()->create(['tenant_id' => $tenant->id, 'document_type' => 'integration_export', 'storage_disk' => 'private', 'storage_path' => $path, 'original_filename' => $export->uuid.'.json', 'mime_type' => 'application/json', 'size_bytes' => strlen($bytes), 'checksum' => $checksum, 'uploaded_by' => $actor->id, 'malware_scan_status' => 'not_available', 'storage_state' => 'stored', 'visibility' => 'private', 'classification' => 'sensitive']);
+            $doc = Document::query()->create(['tenant_id' => $tenant->id, 'document_type' => 'integration_export', 'storage_disk' => 'private', 'storage_path' => $path, 'original_filename' => $export->uuid.'.json', 'mime_type' => 'application/json', 'size_bytes' => strlen($bytes), 'checksum' => $checksum, 'uploaded_by' => $actor->id, 'malware_scan_status' => 'clean', 'storage_state' => 'stored', 'visibility' => 'private', 'classification' => 'sensitive']);
             $export->update(['status' => 'EXPORTED', 'generated_document_id' => $doc->id, 'checksum' => $checksum, 'generated_at' => now(), 'exported_at' => now()]);
             AuditLog::query()->create(['tenant_id' => $tenant->id, 'actor_id' => $actor->id, 'action' => 'integration.exported', 'subject_type' => 'integration_export', 'subject_id' => $export->id, 'before_state' => ['status' => 'READY_FOR_EXPORT'], 'after_state' => ['status' => 'EXPORTED', 'checksum' => $checksum], 'occurred_at' => now()]);
 
@@ -187,7 +192,7 @@ final class ImportExportService
      */
     private function normalize(array $p): array
     {
-        return array_intersect_key($p, array_flip(['uuid', 'classification_id', 'asset_code', 'register_number', 'name', 'description', 'acquisition_date', 'acquisition_year', 'acquisition_origin', 'funding_source_id', 'quantity', 'unit_id', 'unit_price', 'acquisition_value', 'condition', 'lifecycle_status', 'verification_status', 'current_location_id']));
+        return array_intersect_key($p, array_flip(['classification_id', 'asset_code', 'register_number', 'name', 'description', 'acquisition_date', 'acquisition_year', 'acquisition_origin', 'funding_source_id', 'quantity', 'unit_id', 'unit_price', 'acquisition_value', 'condition', 'current_location_id']));
     }
 
     /** @param list<string> $permissions */
