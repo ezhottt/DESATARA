@@ -23,7 +23,7 @@ final class ProtectPublicDemo
         }
 
         // Public showcase: real asset create/update, no arbitrary uploads, identity changes, or data imports.
-        if ($request->hasFile('*')
+        if (count($request->allFiles()) > 0
             || $request->is('forgot-password', 'reset-password', 'imports', 'imports/*',
                 'interoperability', 'interoperability/*', 'administration', 'administration/*',
                 'assets/labels/prepare', 'assets/*/documents', 'assets/*/qr')) {
