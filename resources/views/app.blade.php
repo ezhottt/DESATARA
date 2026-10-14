@@ -11,6 +11,11 @@
     @inertiaHead
 </head>
 <body class="antialiased">
+    @if (app()->environment('demo') && config('public_demo.enabled'))
+        <div role="status" style="background:#fff3d6;color:#704b09;text-align:center;padding:10px 14px;font:600 13px system-ui,sans-serif;border-bottom:1px solid #e4c988;">
+            DESATARA DEMO PUBLIK — Semua data bersifat simulasi dan tidak mewakili aset desa sebenarnya.
+        </div>
+    @endif
     @inertia
 </body>
 </html>
