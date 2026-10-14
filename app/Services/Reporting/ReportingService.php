@@ -61,7 +61,7 @@ final class ReportingService
 
     public function review(Tenant $tenant, User $actor, AssetReport $report): AssetReport
     {
-        $this->authorizeReport($tenant, $actor, $report, 'reports.view');
+        $this->authorizeReport($tenant, $actor, $report, 'reports.export');
         if (! in_array($report->status, ['draft', 'revision'], true)) {
             throw new RuntimeException('Only draft reports can be reviewed.');
         }
@@ -106,7 +106,7 @@ final class ReportingService
             $path = 'reports/'.$tenant->uuid.'/'.$report->uuid.'.json';
             Storage::disk('private')->put($path, $bytes);
             $checksum = hash('sha256', $bytes);
-            $document = Document::query()->create(['tenant_id' => $tenant->id, 'document_type' => 'report_artifact', 'storage_disk' => 'private', 'storage_path' => $path, 'original_filename' => $report->uuid.'.json', 'mime_type' => 'application/json', 'size_bytes' => strlen($bytes), 'checksum' => $checksum, 'uploaded_by' => $actor->id, 'malware_scan_status' => 'not_available', 'storage_state' => 'stored', 'visibility' => 'private', 'classification' => 'sensitive']);
+            $document = Document::query()->create(['tenant_id' => $tenant->id, 'document_type' => 'report_artifact', 'storage_disk' => 'private', 'storage_path' => $path, 'original_filename' => $report->uuid.'.json', 'mime_type' => 'application/json', 'size_bytes' => strlen($bytes), 'checksum' => $checksum, 'uploaded_by' => $actor->id, 'malware_scan_status' => 'clean', 'storage_state' => 'stored', 'visibility' => 'private', 'classification' => 'sensitive']);
             ReportSnapshot::query()->create(['tenant_id' => $tenant->id, 'asset_report_id' => $report->id, 'snapshot_payload' => $payload, 'artifact_document_id' => $document->id, 'artifact_checksum' => $checksum, 'snapshot_checksum' => hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))]);
             $report->update(['status' => 'finalized', 'finalized_by' => $actor->id, 'finalized_at' => now(), 'lock_version' => $report->lock_version + 1]);
             AuditLog::query()->create(['tenant_id' => $tenant->id, 'actor_id' => $actor->id, 'action' => 'report.finalized', 'subject_type' => 'asset_report', 'subject_id' => $report->id, 'before_state' => ['status' => 'review'], 'after_state' => ['status' => 'finalized', 'snapshot_checksum' => $checksum], 'occurred_at' => now()]);
@@ -117,7 +117,7 @@ final class ReportingService
 
     public function revise(Tenant $tenant, User $actor, AssetReport $report): AssetReport
     {
-        $this->authorizeReport($tenant, $actor, $report, 'reports.view');
+        $this->authorizeReport($tenant, $actor, $report, 'reports.export');
         if ($report->status !== 'finalized') {
             throw new RuntimeException('Only finalized reports can be revised.');
         }

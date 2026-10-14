@@ -2331,3 +2331,105 @@ Verification:
 - Vite production build: **PASS**;
 - label runtime fallback scan for `DEMO-CIKADU`, `PERALATAN`, `UNKNOWN`, `N/A`, and `NUP:`: **NONE**;
 - runtime hygiene and `git diff --check`: **PASS**.
+
+
+# 164. PRE-LAUNCH SECURITY HARDENING - 2026-10-07
+
+The pre-launch audit was replayed against current `origin/main`. An older dirty security patch found on a stale local baseline was preserved separately and was **not** committed onto current main. Security fixes were re-applied selectively against the latest source.
+
+TDD evidence before source remediation: the focused security suite produced **7 expected failures / 15 passes (66 assertions)**. The failures directly demonstrated: private-root local serving enabled, missing throttles, upload bypassing quarantine, unscanned stored download returning 200, unbounded direct-import service path, client-controlled import identity/state, and `reports.view` being sufficient to review reports.
+
+After remediation, focused coverage verifies:
+
+- report view-only actors cannot review or revise;
+- route and service authorization agree on `reports.export`;
+- untrusted uploads are `pending / quarantined`;
+- only `clean / stored` documents are downloadable;
+- successful clean-document authorization writes a minimal audit event;
+- server-generated report/export artifacts remain `clean / stored`;
+- private local filesystem serving is disabled;
+- upload/import/export route throttles are registered;
+- direct JSON import rejects 1,001 rows;
+- shared service rejects 5,001 rows while B26 CSV/XLSX regression remains green at its existing contract;
+- client `uuid`, lifecycle state, and verification state are not preserved into normalized import payload.
+
+Dependency evidence:
+- initial npm audit: **2 critical + 1 high**;
+- `source-map-js` transitive patch `1.2.1 -> 1.2.2`: applied after one-package dry-run;
+- follow-up dependency cleanup: unused `concurrently` removed normally; its `shell-quote` subtree disappeared;
+- no `npm audit fix --force` or unreviewed dependency override was applied;
+- Composer audit: **PASS** using temporary Composer 2.10.3 fetched through GitHub CLI; `composer audit --locked --format=json` returned **0 advisories / 0 abandoned packages** and exit code 0.
+
+Final full-suite/static/frontend counts are recorded after the final documentation sync and final-tree gate.
+
+
+Final-tree verification for this security hardening checkpoint:
+- focused security regression after remediation: **22 passed / 89 assertions** before the later import-cap and download-audit additions;
+- B14 + B26 import-cap compatibility: **10 passed / 45 assertions**;
+- report authorization regression: **4 passed / 19 assertions**, covering both review and revise denial for a view-only actor;
+- evidence/download security regression: **6 passed / 20 assertions**;
+- full DESATARA suite: **185 passed / 758 assertions**;
+- Pint: **201 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- `git diff --check`: **PASS**;
+- runtime source hygiene: **PASS**;
+- final npm audit after removing unused `concurrently`: **0 vulnerabilities**.
+
+Production verdict remains **NO-GO** because external operational evidence gates remain open/blocked. The npm dependency blocker is now cleared.
+
+
+# 165. UNUSED CONCURRENTLY REMOVAL - 2026-10-14
+
+A usage audit of `package.json`, npm scripts, and repository references proved `concurrently` was unused. The project only exposes Vite-based `dev` and `build` scripts and no source/build workflow referenced `concurrently`.
+
+Remediation:
+- removed `concurrently` from `devDependencies` using normal `npm uninstall`; no force fix was used;
+- removed 20 now-unneeded transitive packages, including vulnerable `shell-quote@1.9.0`;
+- no dependency override or major downgrade was introduced;
+- post-removal dependency tree contains neither `concurrently` nor `shell-quote`;
+- `npm audit --audit-level=low`: **0 vulnerabilities**.
+
+The npm security blocker is closed. Production remains fail-closed for independent operational evidence gates.
+
+Verification after dependency removal:
+- full DESATARA suite: **185 passed / 758 assertions**;
+- Pint: **201 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- `git diff --check`: **PASS**;
+- `npm audit --audit-level=low`: **0 vulnerabilities**.
+
+
+# 166. MALWARE SCANNER AND DEPENDENCY GATES - 2026-10-14
+
+- `npm audit --audit-level=low`: **0 vulnerabilities** after normal removal of unused `concurrently`; local shell-specific `npm_config_allow_scripts` was cleared only for the audit command.
+- `composer audit --locked --format=json`: **PASS**, Composer 2.10.3, **0 advisories / 0 abandoned packages**.
+- Malware scanner service supports fail-closed Windows Defender and ClamAV drivers; default driver remains `none`.
+- `documents:scan-pending --limit=25` is scheduled every five minutes with `withoutOverlapping()`.
+- targeted scanner/readiness suite: **10 passed / 32 assertions**.
+- actual local Windows Defender harmless-file smoke: **exit 0**, output contains `found no threats`.
+- production readiness intentionally remains FAIL until production malware/TLS/backup/restore/queue/scheduler/proxy/monitoring/alerting evidence is supplied.
+
+
+# 167. LOCAL BACKUP INTEGRITY / RESTORE PRECHECK - 2026-10-14
+
+Local non-production recovery verification:
+- PostgreSQL role `desatara`: `CREATEDB=NO`;
+- custom-format `pg_dump`: **PASS**, archive size **414077 bytes**;
+- `pg_restore --list`: **PASS**, archive structurally readable;
+- private-storage files: **66**;
+- private-storage backup/restore-copy SHA-256 manifest: **MATCH**;
+- isolated database creation/restore: **BLOCKED** because the application role is intentionally not allowed to create databases.
+
+No privilege escalation was performed. Production restore evidence remains mandatory and must be executed by an authorized operator/environment that can create an isolated restore target.
+
+Final local gate after malware/readiness implementation:
+- full suite: **191 passed / 778 assertions**;
+- Pint: **204 files PASS**;
+- PHPStan: **0 errors**;
+- Vite build: **PASS**;
+- npm audit: **0 vulnerabilities**;
+- Composer audit: **0 advisories / 0 abandoned packages**;
+- runtime hygiene: **PASS**;
+- production readiness command: expected **FAIL** without external evidence.

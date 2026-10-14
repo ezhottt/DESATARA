@@ -34,6 +34,11 @@ class CheckProductionReadiness extends Command
             $checks['Restore smoke evidence is recorded'] = filled(config('operations.readiness.restore_evidence'));
             $checks['Queue worker evidence is recorded'] = filled(config('operations.readiness.queue_evidence'));
             $checks['Scheduler evidence is recorded'] = filled(config('operations.readiness.scheduler_evidence'));
+            $checks['Malware scanner is configured'] = in_array(config('operations.malware_scanner.driver'), ['clamav', 'windows_defender'], true);
+            $checks['Malware scanner evidence is recorded'] = filled(config('operations.readiness.malware_evidence'));
+            $checks['Trusted proxy evidence is recorded'] = filled(config('operations.readiness.proxy_evidence'));
+            $checks['Monitoring evidence is recorded'] = filled(config('operations.readiness.monitoring_evidence'));
+            $checks['Alerting evidence is recorded'] = filled(config('operations.readiness.alerting_evidence'));
         }
 
         $failed = false;

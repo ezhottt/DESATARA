@@ -34,6 +34,13 @@ class B17ProductionReadinessTest extends TestCase
             ->assertExitCode(1);
     }
 
+    public function test_malware_scan_command_is_scheduled(): void
+    {
+        $this->artisan('schedule:list')
+            ->expectsOutputToContain('documents:scan-pending --limit=25')
+            ->assertExitCode(0);
+    }
+
     public function test_production_readiness_command_passes_with_required_operational_evidence(): void
     {
         config([
@@ -53,10 +60,20 @@ class B17ProductionReadinessTest extends TestCase
             'operations.readiness.restore_evidence' => 'restore-check-2026-10-03',
             'operations.readiness.queue_evidence' => 'queue-check-2026-10-03',
             'operations.readiness.scheduler_evidence' => 'scheduler-check-2026-10-03',
+            'operations.readiness.malware_evidence' => 'malware-check-2026-10-14',
+            'operations.malware_scanner.driver' => 'clamav',
+            'operations.readiness.proxy_evidence' => 'proxy-check-2026-10-14',
+            'operations.readiness.monitoring_evidence' => 'monitoring-check-2026-10-14',
+            'operations.readiness.alerting_evidence' => 'alerting-check-2026-10-14',
         ]);
 
         $this->artisan('desatara:check-readiness', ['--production' => true])
             ->expectsOutputToContain('PASS  Restore smoke evidence is recorded')
+            ->expectsOutputToContain('PASS  Malware scanner is configured')
+            ->expectsOutputToContain('PASS  Malware scanner evidence is recorded')
+            ->expectsOutputToContain('PASS  Trusted proxy evidence is recorded')
+            ->expectsOutputToContain('PASS  Monitoring evidence is recorded')
+            ->expectsOutputToContain('PASS  Alerting evidence is recorded')
             ->doesntExpectOutputToContain('synthetic-test-key')
             ->assertExitCode(0);
     }
