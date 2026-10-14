@@ -2356,7 +2356,7 @@ After remediation, focused coverage verifies:
 Dependency evidence:
 - initial npm audit: **2 critical + 1 high**;
 - `source-map-js` transitive patch `1.2.1 -> 1.2.2`: applied after one-package dry-run;
-- current npm audit: **2 critical + 0 high**, both rooted in `concurrently@10.0.5 -> shell-quote@1.9.0`;
+- follow-up dependency cleanup: unused `concurrently` removed normally; its `shell-quote` subtree disappeared;
 - no `npm audit fix --force` or unreviewed dependency override was applied;
 - Composer audit: **BLOCKED** because Composer is unavailable and temporary PHAR retrieval failed.
 
@@ -2374,6 +2374,28 @@ Final-tree verification for this security hardening checkpoint:
 - Vite production build: **PASS**;
 - `git diff --check`: **PASS**;
 - runtime source hygiene: **PASS**;
-- final npm audit: **0 high, 2 critical**, both rooted in `concurrently -> shell-quote`.
+- final npm audit after removing unused `concurrently`: **0 vulnerabilities**.
 
-Production verdict remains **NO-GO** because dependency and external operational evidence gates remain open/blocked.
+Production verdict remains **NO-GO** because external operational evidence gates remain open/blocked. The npm dependency blocker is now cleared.
+
+
+# 165. UNUSED CONCURRENTLY REMOVAL - 2026-10-14
+
+A usage audit of `package.json`, npm scripts, and repository references proved `concurrently` was unused. The project only exposes Vite-based `dev` and `build` scripts and no source/build workflow referenced `concurrently`.
+
+Remediation:
+- removed `concurrently` from `devDependencies` using normal `npm uninstall`; no force fix was used;
+- removed 20 now-unneeded transitive packages, including vulnerable `shell-quote@1.9.0`;
+- no dependency override or major downgrade was introduced;
+- post-removal dependency tree contains neither `concurrently` nor `shell-quote`;
+- `npm audit --audit-level=low`: **0 vulnerabilities**.
+
+The npm security blocker is closed. Production remains fail-closed for independent operational evidence gates.
+
+Verification after dependency removal:
+- full DESATARA suite: **185 passed / 758 assertions**;
+- Pint: **201 files PASS**;
+- PHPStan: **0 errors**;
+- Vite production build: **PASS**;
+- `git diff --check`: **PASS**;
+- `npm audit --audit-level=low`: **0 vulnerabilities**.

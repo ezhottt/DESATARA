@@ -73,7 +73,7 @@ This checkpoint was rebuilt against current `origin/main` rather than applying a
 
 A fresh `npm audit --audit-level=low` originally reported **2 critical + 1 high**. The high finding was `source-map-js@1.2.1`; a dry-run proved that a patch-only transitive update to `1.2.2` changed exactly one package, and that update was applied.
 
-Current npm status is therefore **2 critical, 0 high**. Both remaining audit entries have one root: direct dev dependency `concurrently@10.0.5` pins `shell-quote@1.9.0`, which is affected by GHSA-pqg4-j6r4-53mv. The available automatic npm force-fix changes the `concurrently` line incompatibly, so no force fix or unreviewed override was applied.
+A follow-up usage audit proved `concurrently` was unused: it appeared in `devDependencies` but was referenced by no npm script or application/build source. It was removed normally (no force fix), which removed the vulnerable `shell-quote` subtree. Current `npm audit --audit-level=low` reports **0 vulnerabilities**.
 
 `composer audit` remains **BLOCKED in this laptop environment**: Composer is not installed, no Laragon/AppData Composer binary was found, and a temporary Composer PHAR download from getcomposer.org was terminated by the remote host. No PHP dependency-security result is claimed.
 
@@ -97,7 +97,6 @@ A targeted history scan across 49 reachable commits found no matches for common 
 
 ### Remaining release blockers
 
-- Two critical npm audit entries rooted in `concurrently -> shell-quote@1.9.0`.
 - Composer dependency audit not completed.
 - No operational malware scanner / quarantine-release workflow evidence.
 - Production backup + isolated restore drill not completed.
