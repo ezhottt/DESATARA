@@ -54,6 +54,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer audit --locked --no-interaction
       - run: npm ci
       - run: php artisan migrate:fresh --force
       - run: npm run build
@@ -93,6 +94,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: npm audit --audit-level=low
       - name: Lint when configured
         shell: bash
         run: |

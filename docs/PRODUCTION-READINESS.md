@@ -75,7 +75,7 @@ A fresh `npm audit --audit-level=low` originally reported **2 critical + 1 high*
 
 A follow-up usage audit proved `concurrently` was unused: it appeared in `devDependencies` but was referenced by no npm script or application/build source. It was removed normally (no force fix), which removed the vulnerable `shell-quote` subtree. Current `npm audit --audit-level=low` reports **0 vulnerabilities**.
 
-`composer audit` remains **BLOCKED in this laptop environment**: Composer is not installed, no Laragon/AppData Composer binary was found, and a temporary Composer PHAR download from getcomposer.org was terminated by the remote host. No PHP dependency-security result is claimed.
+Composer 2.10.3 was obtained temporarily through the official GitHub release asset using GitHub CLI. `composer audit --locked --format=json` completed with exit code 0 and reported **0 advisories / 0 abandoned packages**. The temporary PHAR was removed after the audit and was not committed.
 
 ### External evidence still blocked
 
@@ -91,17 +91,29 @@ A follow-up usage audit proved `concurrently` was unused: it appeared in `devDep
 
 The backup/restore runbook exists, but its evidence record is still blank. The repository does not prove centralized logging/alerting, production reverse-proxy/trusted-proxy behavior, TLS, filesystem permissions, worker supervision, scheduler health, malware scanner operation, or authenticated production smoke.
 
-The local scheduler currently reports no scheduled tasks. Logging defaults remain configurable `stack -> single` with default debug level; this is not accepted as production observability evidence.
+The local scheduler now registers `documents:scan-pending --limit=25` every five minutes with overlap protection. A real Windows Defender smoke scan against a harmless local file returned exit code 0 and `found no threats`, matching the scanner parser. This is local implementation evidence only; it is not production scanner evidence. Logging defaults remain configurable `stack -> single` with default debug level and are not accepted as production observability evidence.
 
 A targeted history scan across 49 reachable commits found no matches for common GitHub token, private-key, APP_KEY material, AWS secret, or non-placeholder DB-password patterns. This is targeted evidence, not a replacement for a dedicated secret scanner.
 
 ### Remaining release blockers
 
-- Composer dependency audit not completed.
-- No operational malware scanner / quarantine-release workflow evidence.
+- Production malware scanner configuration/evidence is not recorded; local scanner implementation and Windows Defender smoke are green.
 - Production backup + isolated restore drill not completed.
 - Production TLS, proxy, cookie/header, filesystem-permission, worker, scheduler, monitoring/alerting, and smoke evidence not completed.
 - GitHub-hosted CI remains an external release gate until the billing/account lock is resolved and the required jobs genuinely execute successfully.
 - Report artifact delivery through the generic document-download surface should receive an authenticated end-to-end smoke test before launch because report export and document download use distinct permissions/associations.
 
 No production deployment, production migration, or production data mutation was performed by this audit.
+
+
+### 2026-10-14 local recovery precheck
+
+A non-production recovery precheck confirmed that the current application role cannot create databases (`CREATEDB=NO`), so an actual isolated database restore was not forced through elevated credentials.
+
+Verified locally:
+- PostgreSQL custom-format backup can be created;
+- the dump is readable by `pg_restore --list`;
+- private storage can be copied and verified by SHA-256 manifest;
+- the local private-storage manifest covered 66 files and matched exactly after copy.
+
+Actual isolated database restore remains a **production/recovery BLOCKER** until an authorized operator provides an isolated target or a role allowed to create the restore database. No privilege escalation was performed.

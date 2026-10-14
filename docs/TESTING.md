@@ -2358,7 +2358,7 @@ Dependency evidence:
 - `source-map-js` transitive patch `1.2.1 -> 1.2.2`: applied after one-package dry-run;
 - follow-up dependency cleanup: unused `concurrently` removed normally; its `shell-quote` subtree disappeared;
 - no `npm audit fix --force` or unreviewed dependency override was applied;
-- Composer audit: **BLOCKED** because Composer is unavailable and temporary PHAR retrieval failed.
+- Composer audit: **PASS** using temporary Composer 2.10.3 fetched through GitHub CLI; `composer audit --locked --format=json` returned **0 advisories / 0 abandoned packages** and exit code 0.
 
 Final full-suite/static/frontend counts are recorded after the final documentation sync and final-tree gate.
 
@@ -2399,3 +2399,37 @@ Verification after dependency removal:
 - Vite production build: **PASS**;
 - `git diff --check`: **PASS**;
 - `npm audit --audit-level=low`: **0 vulnerabilities**.
+
+
+# 166. MALWARE SCANNER AND DEPENDENCY GATES - 2026-10-14
+
+- `npm audit --audit-level=low`: **0 vulnerabilities** after normal removal of unused `concurrently`; local shell-specific `npm_config_allow_scripts` was cleared only for the audit command.
+- `composer audit --locked --format=json`: **PASS**, Composer 2.10.3, **0 advisories / 0 abandoned packages**.
+- Malware scanner service supports fail-closed Windows Defender and ClamAV drivers; default driver remains `none`.
+- `documents:scan-pending --limit=25` is scheduled every five minutes with `withoutOverlapping()`.
+- targeted scanner/readiness suite: **10 passed / 32 assertions**.
+- actual local Windows Defender harmless-file smoke: **exit 0**, output contains `found no threats`.
+- production readiness intentionally remains FAIL until production malware/TLS/backup/restore/queue/scheduler/proxy/monitoring/alerting evidence is supplied.
+
+
+# 167. LOCAL BACKUP INTEGRITY / RESTORE PRECHECK - 2026-10-14
+
+Local non-production recovery verification:
+- PostgreSQL role `desatara`: `CREATEDB=NO`;
+- custom-format `pg_dump`: **PASS**, archive size **414077 bytes**;
+- `pg_restore --list`: **PASS**, archive structurally readable;
+- private-storage files: **66**;
+- private-storage backup/restore-copy SHA-256 manifest: **MATCH**;
+- isolated database creation/restore: **BLOCKED** because the application role is intentionally not allowed to create databases.
+
+No privilege escalation was performed. Production restore evidence remains mandatory and must be executed by an authorized operator/environment that can create an isolated restore target.
+
+Final local gate after malware/readiness implementation:
+- full suite: **191 passed / 778 assertions**;
+- Pint: **204 files PASS**;
+- PHPStan: **0 errors**;
+- Vite build: **PASS**;
+- npm audit: **0 vulnerabilities**;
+- Composer audit: **0 advisories / 0 abandoned packages**;
+- runtime hygiene: **PASS**;
+- production readiness command: expected **FAIL** without external evidence.
