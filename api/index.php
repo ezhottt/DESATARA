@@ -38,6 +38,7 @@ if (! $ready) {
     header('Content-Type: text/plain; charset=utf-8');
     header('Cache-Control: no-store');
     echo 'DESATARA demo configuration is not ready.';
+
     return;
 }
 
@@ -60,6 +61,7 @@ foreach ($directoryPaths as $path) {
         header('Content-Type: text/plain; charset=utf-8');
         header('Cache-Control: no-store');
         echo 'DESATARA demo runtime storage is unavailable.';
+
         return;
     }
 }
