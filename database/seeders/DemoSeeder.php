@@ -15,12 +15,12 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\Unit;
 use App\Models\User;
+use App\Support\PublicDemoGuard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use RuntimeException;
-use App\Support\PublicDemoGuard;
 
 class DemoSeeder extends Seeder
 {
