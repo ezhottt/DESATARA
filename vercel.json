@@ -3,7 +3,7 @@
   "version": 2,
   "framework": null,
   "buildCommand": "npm run build",
-  "outputDirectory": "public",
+  "outputDirectory": "public/build",
   "functions": {
     "api/index.php": {
       "runtime": "vercel-php@0.8.0"
@@ -11,22 +11,11 @@
   },
   "routes": [
     {
-      "src": "^/$",
-      "dest": "/api/index.php"
+      "src": "^/build/assets/([A-Za-z0-9._-]+)$",
+      "dest": "/assets/$1"
     },
     {
-      "src": "^/index\\.php$",
-      "dest": "/api/index.php"
-    },
-    {
-      "src": "^/\\.htaccess$",
-      "status": 404
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
+      "src": "^/(.*)$",
       "dest": "/api/index.php"
     }
   ]
