@@ -21,6 +21,10 @@ $ready = getenv('APP_ENV') === 'demo'
     && getenv('APP_DEBUG') === 'false'
     && getenv('DB_CONNECTION') === 'pgsql'
     && $databaseName === 'desatara_demo'
+    && (
+        (is_string($databaseUrl) && str_ends_with((string) parse_url($databaseUrl, PHP_URL_HOST), '.aws.neon.tech'))
+        || (! is_string($databaseUrl) || $databaseUrl === '') && str_ends_with((string) getenv('DB_HOST'), '.aws.neon.tech')
+    )
     && getenv('SESSION_DRIVER') === 'database'
     && getenv('CACHE_STORE') === 'database'
     && getenv('LOG_CHANNEL') === 'stderr'
@@ -41,8 +45,13 @@ if (! $ready) {
 $temporaryRoot = '/tmp/desatara';
 $directoryPaths = [
     $temporaryRoot,
-    $temporaryRoot.'/views',
     $temporaryRoot.'/cache',
+    $temporaryRoot.'/storage',
+    $temporaryRoot.'/storage/app/private',
+    $temporaryRoot.'/storage/framework/views',
+    $temporaryRoot.'/storage/framework/cache',
+    $temporaryRoot.'/storage/framework/sessions',
+    $temporaryRoot.'/storage/logs',
 ];
 
 foreach ($directoryPaths as $path) {
@@ -56,7 +65,8 @@ foreach ($directoryPaths as $path) {
 }
 
 $runtimePaths = [
-    'VIEW_COMPILED_PATH' => $temporaryRoot.'/views',
+    'LARAVEL_STORAGE_PATH' => $temporaryRoot.'/storage',
+    'VIEW_COMPILED_PATH' => $temporaryRoot.'/storage/framework/views',
     'APP_CONFIG_CACHE' => $temporaryRoot.'/cache/config.php',
     'APP_EVENTS_CACHE' => $temporaryRoot.'/cache/events.php',
     'APP_PACKAGES_CACHE' => $temporaryRoot.'/cache/packages.php',
