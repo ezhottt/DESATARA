@@ -1,0 +1,19 @@
+# Exclude local secrets, logs, editor state, and development-only files.
+.env
+.env.*
+!.env.example
+.git
+.github
+.codex
+.cursor
+.idea
+.vscode
+node_modules
+vendor
+tests
+docs
+*.log
+storage/logs
+storage/app/private
+public/hot
+public/storage
