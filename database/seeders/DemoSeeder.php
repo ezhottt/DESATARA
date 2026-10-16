@@ -15,6 +15,7 @@ use App\Models\Tenant;
 use App\Models\TenantMembership;
 use App\Models\Unit;
 use App\Models\User;
+use App\Support\PublicDemoGuard;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -25,21 +26,25 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
+        if (app()->environment('demo')) {
+            $password = PublicDemoGuard::assertIsolated();
+        } elseif (app()->environment(['local', 'testing'])) {
+            $password = 'Demo12345!';
+        } else {
             throw new RuntimeException('DemoSeeder hanya boleh dijalankan pada environment local atau testing.');
         }
 
-        DB::transaction(function (): void {
+        DB::transaction(function () use ($password): void {
             $this->call(RbacSeeder::class);
 
             $tenant = Tenant::query()->updateOrCreate(
                 ['village_code' => 'DEMO-CIKADU'],
-                ['uuid' => '00000000-0000-4000-8000-000000000001', 'name' => 'Desa Cikadu Demo', 'province' => 'Jawa Barat', 'regency' => 'Cianjur', 'district' => 'Cikadu', 'address' => 'Kecamatan Cikadu, Kabupaten Cianjur', 'timezone' => 'Asia/Jakarta', 'locale' => 'id', 'status' => 'active', 'activated_at' => now()]
+                ['uuid' => '00000000-0000-4000-8000-000000000001', 'name' => app()->environment('demo') ? 'Desa Contoh (SIMULASI)' : 'Desa Cikadu Demo', 'province' => 'Jawa Barat', 'regency' => 'Cianjur', 'district' => 'Cikadu', 'address' => 'Kecamatan Cikadu, Kabupaten Cianjur', 'timezone' => 'Asia/Jakarta', 'locale' => 'id', 'status' => 'active', 'activated_at' => now()]
             );
 
             $user = User::query()->updateOrCreate(
                 ['email' => 'admin@demo.desatara.local'],
-                ['name' => 'Admin Demo DESATARA', 'password' => Hash::make('Demo12345!'), 'email_verified_at' => now()]
+                ['name' => 'Admin Demo DESATARA', 'password' => Hash::make($password), 'email_verified_at' => now()]
             );
             $membership = TenantMembership::query()->updateOrCreate(
                 ['tenant_id' => $tenant->id, 'user_id' => $user->id],

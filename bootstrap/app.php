@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureTenantOperational;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ProtectPublicDemo;
 use App\Http\Middleware\RequireTenantPermission;
 use App\Http\Middleware\ResolveTenantContext;
 use App\Http\Middleware\SecurityHeaders;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             HandleInertiaRequests::class,
             SecurityHeaders::class,
+            ProtectPublicDemo::class,
         ]);
 
         $middleware->alias([

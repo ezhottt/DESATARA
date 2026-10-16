@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Models\WorkflowDefinition;
 use App\Models\WorkflowInstance;
 use App\Models\WorkflowVersion;
+use App\Support\PublicDemoGuard;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
@@ -25,7 +26,9 @@ class DemoOperationalSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
+        if (app()->environment('demo')) {
+            PublicDemoGuard::assertIsolated();
+        } elseif (! app()->environment(['local', 'testing'])) {
             throw new RuntimeException('DemoOperationalSeeder hanya boleh dijalankan pada environment local atau testing.');
         }
 
