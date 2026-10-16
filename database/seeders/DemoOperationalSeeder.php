@@ -18,9 +18,9 @@ use App\Models\User;
 use App\Models\WorkflowDefinition;
 use App\Models\WorkflowInstance;
 use App\Models\WorkflowVersion;
+use App\Support\PublicDemoGuard;
 use Illuminate\Database\Seeder;
 use RuntimeException;
-use App\Support\PublicDemoGuard;
 
 class DemoOperationalSeeder extends Seeder
 {
